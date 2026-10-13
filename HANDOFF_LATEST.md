@@ -1,19 +1,14 @@
-# 最新交接：V0.1 拖出真实文件修复
+# 最新交接：V0.1 图标更新
 
-日期：2026-10-13（Asia/Shanghai）
-前序提交：a7e0f5d（废纸篓、目录、持续显示）。用户反馈无法将卡片文件拖入微信/工作窗口。
+2026-10-13（Asia/Shanghai）；前序提交 29d1b1a。
 
-## 发现及修复
-代码在指针离开卡片时将浮层设为 ignoresMouseEvents，自动隐藏和跨屏移动也未排除按住/拖动状态，可能打断 AppKit 鼠标跟踪。Downloads 刷新还会重新构造列表，可能移除源卡片。按住或拖动期间现在冻结这些窗口行为及卡片列表刷新，拖拽结束后刷新并清理状态。
+## 本轮
+用户提供浅色圆角底、蓝色 T 恤、晾衣绳及深色夹子参考图，要求更换 logo。通过内置 image_gen 生成独立透明 PNG，替换 assets/clothesline-icon.png；菜单栏加载应用包同一 ICNS，避免继续显示旧篮子 emoji。直接 Swift 可执行环境缺少 ICNS 时仍用 emoji 兜底。
 
-拖拽源改为 NSPasteboardItem，同时提供标准 public.file-url（真实文件 URL）和 NSFilenamesPboardType（路径数组），支持仍使用旧式格式的桌面应用。只提供 copy，忽略修饰键；不移动、删除源文件。
+源图 1254 × 1254、带 alpha。生成方式、参考角色与完整提示词保存于 assets/ICON_DESIGN.md；旧图标可从 Git 恢复。没有使用 Tendedero 的图标或名称。
 
-## 验证
-scripts/test-core.sh、scripts/test-macos.sh 通过；后者验证 NSURL 解码真实拖拽文件、旧式路径数组、源卡片在扫描变化期间保留、结束后恢复刷新。已有目录/废纸篓/持久显示回归通过。Release 构建及签名检查通过。
+## 验证与交付
+scripts/build-app.sh release 和 scripts/test-macos.sh 均通过；签名、Info.plist 与 ICNS 全部尺寸检查通过，128 像素缩略图已视觉检查，新版已启动。构建脚本从 PNG 生成 16–1024 像素多尺寸图标。本轮不改变文件操作或拖拽逻辑。
 
-系统对旧式 NSFilenamesPboardType 在读取时输出非 UTI 诊断，但路径数组断言通过；构造测试 NSDraggingSession 仍有 CoreDragDispose -1850，实际跨应用拖拽不能仅靠这些测试证明。
-
-## 下一步与限制
-新版已重启。使用自建测试文件先从卡片拖进 Finder 测试文件夹，再拖进微信输入/附件区或编辑器。检查 auto-hide 和一直显示两种模式；拖动时间超过 1 秒、跨屏及扫描更新期间都应保留源。检查松手失败/取消后仍可再次拖动，源文件不变。
-
-没有向任何联系人发送文件，没有对用户下载执行移动/删除。微信实际接收和发送/编辑端到端尚未人工验收，不宣称本轮完成该外部 UI 验证。保留 V0.1 候选状态，既有预览/打开/权限/多屏验收继续。
+## 下一步
+继续前序拖拽的微信/编辑窗口实际接收验收，以及预览、多屏、权限验收；仍为 V0.1 候选版。若 Finder 保留旧图标缓存，可重新打开 build/Clothesline.app；不修改系统图标缓存设置。

@@ -6,7 +6,9 @@
 ## 架构与功能
 SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏、SwiftUI 卡片、Quick Look、Carbon 快捷键。DownloadsWatcher 使用 vnode 事件及 2 秒轮询；DownloadIndex 扫描顶层文件与目录，排除隐藏项、符号链接及临时下载名，使用两次稳定样本和 2 秒静默期。
 
-本轮修复用户反馈的拖出失败：
+本轮更新：替换独立 logo（浅色圆角底、蓝色 T 恤、晾衣绳与夹子），应用包和菜单栏统一；源文件 assets/clothesline-icon.png，生成说明 assets/ICON_DESIGN.md。
+
+前轮修复用户反馈的拖出失败：
 - 按住及拖拽期间不切换源窗口鼠标穿透，不隐藏/移动源窗口。
 - 延迟卡片列表刷新至交互结束，防止目录更新销毁源视图。
 - 提供标准 file URL 与兼容旧应用的文件路径数组，忽略修饰键以维持 copy。
