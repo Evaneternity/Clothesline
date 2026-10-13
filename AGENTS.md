@@ -9,7 +9,7 @@ V0.1 优先交付可运行的 macOS 14+ 原生应用。参考 Tendedero 的视�
 3. 运行 scripts/test-core.sh；涉及 macOS 行为运行 scripts/test-macos.sh；构建 scripts/build-app.sh。不得将源码审查或模型测试写为 UI 实测。
 4. 更新 PROJECT_STATE.md（当前事实/证据/限制）、HANDOFF_LATEST.md（改动/命令/下一步）和 CHANGELOG.md；范围变化同步 ROADMAP.md。
 5. 检查 git diff --check，将代码和交接文档一起提交。main 保持可构建，较大工作使用 fix/ 或 feature/ 分支。
-6. 仅在版本验收完成后打 vX.Y.Z 标签；候选版用 vX.Y.Z-rc.N。用户已授权本项目持续同步 GitHub：每轮验证通过并提交后推送对应分支；不自动公开仓库、发布 Release 或修改系统权限。
+6. 仅在版本验收完成后打 vX.Y.Z 标签；候选版用 vX.Y.Z-rc.N。用户已授权本项目持续同步 GitHub：每轮验证通过并提交后推送对应分支；仓库已按用户要求公开；仅在用户授权发行时创建 Release，不自动修改系统权限。
 
 ## 安全与许可
 - UI 取下、清空、退出只改变展示状态，不删除、移动或覆盖源文件。

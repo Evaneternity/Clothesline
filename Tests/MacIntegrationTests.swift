@@ -118,6 +118,34 @@ struct MacIntegrationTests {
         dragLine.draggingID = nil
         dragLine.updateVisibleItems()
         precondition(dragLine.items.isEmpty, "pending scan applied after drag")
+        let suite = "Clothesline-Multi-\(UUID())"
+        let isolatedDefaults = UserDefaults(suiteName: suite)!
+        defer { isolatedDefaults.removePersistentDomain(forName: suite) }
+        let secondFolder = folder.appendingPathComponent("second-watch", isDirectory: true)
+        try FileManager.default.createDirectory(at: secondFolder, withIntermediateDirectories: false)
+        let secondFile = secondFolder.appendingPathComponent("second.txt")
+        try bytes.write(to: secondFile)
+        var merged: [DownloadFile] = []
+        let multi = FolderMonitors(defaults: isolatedDefaults) { merged = $0 }
+        multi.start()
+        defer { multi.stop() }
+        try multi.add(folder)
+        try multi.add(secondFolder)
+        try multi.add(folder)
+        precondition(multi.folders.count == 3, "Downloads plus two distinct monitors")
+        for _ in 0..<16 {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+            if merged.contains(where: { $0.path == file.standardizedFileURL.path }) &&
+                merged.contains(where: { $0.path == secondFile.standardizedFileURL.path }) { break }
+        }
+        precondition(merged.contains { $0.path == file.standardizedFileURL.path } &&
+                     merged.contains { $0.path == secondFile.standardizedFileURL.path }, "both folders deliver files")
+        precondition(Set(merged.map(\.path)).count == merged.count, "merged paths deduplicated")
+        multi.stop()
+        let restarted = FolderMonitors(defaults: isolatedDefaults) { _ in }
+        restarted.start()
+        precondition(restarted.folders.count == 3, "monitors survive restart with default Downloads")
+        restarted.stop()
         let drag = GrabView()
         precondition(drag.draggingSession(NSDraggingSession(), sourceOperationMaskFor: .outsideApplication) == .copy)
         print("PASS: macOS live watcher, temporary rename, actual rope URL, dismissal/restart/clear and source bytes, copy-only drag, attached folders, recoverable file/folder trash, stale deletion rejection, display persistence")

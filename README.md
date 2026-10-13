@@ -8,7 +8,7 @@ Inspired by [Tendedero](https://github.com/alejandrobujan/tendedero) by Alejandr
 
 ## 功能（V0.1）
 
-- 自动监听系统 `~/Downloads` 或手动选择的文件夹（无需云端和账号）。
+- 默认监听系统 `~/Downloads`，通过“添加监控文件夹…”可同时监听多个目录（无需云端和账号）。
 - 启动后显示最近的下载文件和目录，并持续检查最新加入的项目。
 - 菜单栏 → “挂上文件夹…”可挂上任意所选目录，保留原位置，重启后保留入口。
 - 过滤 `.crdownload`、`.download`、`.part`、`.tmp` 等临时后缀和隐藏文件。
@@ -20,10 +20,18 @@ Inspired by [Tendedero](https://github.com/alejandrobujan/tendedero) by Alejandr
 - “移到废纸篓…”经确认后移除原文件或整个目录，可在 Finder 废纸篓恢复。
 - 拖出真实文件到其他 app 或 Finder；**默认只提供复制操作**，不移动源文件。
 - 左上角 `×` 及“清空晾衣绳”只隐藏条目，**不删除、移动、覆盖** Downloads 里的任何文件。
-- 菜单栏选择监控目录、控制显示数量和卡片尺寸、固定显示。
+- 菜单栏添加多个监控目录、控制显示数量和卡片尺寸、固定显示。
 - 菜单栏选择“一直显示晾衣绳”或“自动隐藏晾衣绳”；`⌃⌥T` 切换，重启后保留选择。
 - 已移除条目保留本地抑制记录，重新下载替换文件后可再次显示。
 - 轮询兜底用于处理事件丢失和睡眠唤醒。
+
+## 下载安装（V0.1 候选版）
+
+[下载 Clothesline DMG（Apple Silicon）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-0.1.0-rc.1-arm64.dmg) · [发行说明和 SHA-256 校验文件](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.1)
+
+要求 macOS 14+、Apple Silicon（M 系列）；本次不提供 Intel 安装包。打开 DMG，将 Clothesline.app 拖到 Applications，再打开应用。当前仅 ad-hoc 签名，未 Developer ID 签名/公证；macOS 可能阻止首次运行，请确认来自本仓库后，按系统“隐私与安全性”的提示允许打开。
+
+默认监控 Downloads。菜单“添加监控文件夹…”可以一次选择多个目录，原监控继续运行；添加列表重启后保留。旧版本自选监控目录会保留，同时补回默认 Downloads。菜单列出所有目录及各自错误。 “挂上文件夹…”仅添加目录快捷入口，与持续监控内容不同。
 
 ## macOS 构建与运行
 
@@ -40,9 +48,9 @@ open build/Clothesline.app
 
 构建脚本默认使用本机架构（Apple Silicon 或 Intel）、`release` 配置，并进行本机 **ad-hoc 签名**，无需开发者证书。若需要 Debug 构建：`scripts/build-app.sh debug`。
 
-第一次读取 Downloads 时，macOS 可能要求授权。若自动权限没有弹出或监听失败，请点击菜单栏的 🧺 → **选择监控文件夹…** → 选择 Downloads。自选文件夹采用 security-scoped bookmark（能够使用时）保留访问权限。重新构建后，macOS 可能重新请求授权。
+第一次读取 Downloads 时，macOS 可能要求授权。若自动权限没有弹出或监听失败，请点击菜单栏的 🧺 → **添加监控文件夹…** → 选择 Downloads。自选文件夹采用 security-scoped bookmark（能够使用时）保留访问权限。重新构建后，macOS 可能重新请求授权。
 
-**这是源码构建，不是苹果公证的发行安装包**；未提供 `.dmg` / 自动更新。项目不会修改系统的截图设置，不截屏，也不读取剪贴板。
+**候选安装包尚未 Apple 公证**；已提供 `.dmg`，暂不支持自动更新。项目不会修改系统的截图设置，不截屏，也不读取剪贴板。
 
 ## 操作速查
 
@@ -88,7 +96,7 @@ Clothesline/
 4. **单层监控。** 自动扫描顶层文件与目录，不递归。目录使用系统图标，双击在 Finder 打开；手动挂上的目录通过普通书签保存，当前适用于非沙盒本地版本。临时下载目录和符号链接不挂上。
 5. **非破坏性拖出。** V0.1 源仅通告 `.copy`；如果想从 Downloads 移动到其他文件夹，需要使用 Finder 完成移动。未来可以考虑经确认的移动模式。
 6. **可验收，不夸大。** 已在 macOS 构建启动并测试真实目录监听、真实 URL 卡片及非破坏性取下。运行应用已识别 Downloads 新文件。浏览器下载、完整 UI 交互、多屏和权限拒绝仍待验收。
-7. **未包含**：开机自启、原生 DMG 分发、Apple 公证、自动更新、高级全屏隐藏策略、完整无障碍 / VoiceOver、中文外其他本地化。这些属于后续版本。
+7. **未包含**：开机自启、Apple 公证、自动更新、高级全屏隐藏策略、完整无障碍 / VoiceOver、中文外其他本地化。这些属于后续版本。
 
 ## 后续 macOS 验收清单
 
@@ -109,3 +117,5 @@ Tendedero 源码由 Alejandro Buján 按 MIT 发布；本项目借鉴并改写�
 ## 持续开发
 
 遵循 AGENTS.md，每轮更新 PROJECT_STATE.md、HANDOFF_LATEST.md、CHANGELOG.md 并提交 Git。运行 scripts/test-core.sh、scripts/test-macos.sh 和 scripts/build-app.sh release。GitHub 公开仓库：https://github.com/zhongguozhang/Clothesline。每轮验证、更新交接、提交后推送；开始工作先检查远端变化，禁止强制推送。
+
+DMG 重建：`scripts/build-dmg.sh`（本机架构构建，当前发行包为 arm64）。

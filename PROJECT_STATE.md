@@ -39,8 +39,16 @@ SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏、SwiftUI 卡片
 - Quick Look、双击、实际 Finder 拖拽，Chrome/Safari 下载，权限拒绝/重新授权、睡眠、多屏、macOS 14 兼容性仍待验收。
 - 目录稳定仅看目录本身元数据，不递归判断内容写入；完成检测为启发式。
 - 手动目录读不到时不展示，书签保留便于恢复访问；未增加单独的目录权限错误 UI。
-- 隐藏记录尚未自动清理；本地 ad-hoc 签名，无公证/DMG，不打正式版本标签。
+- 隐藏记录尚未自动清理；本地 ad-hoc 签名，未公证，提供 DMG 候选版（v0.1.0-rc.1），不打正式版本标签。
 
 ## GitHub
 
 已建立公开远端 origin：https://github.com/zhongguozhang/Clothesline，默认分支 main。用户授权后续开发持续同步；流程见 AGENTS.md。初次推送与 SHA 核验见本轮交付结果。
+
+## 本轮：多目录监控与下载发行
+
+新增 FolderMonitors：默认 Downloads，每个目录独立 watcher 和完成 gate；“添加监控文件夹…”支持多选，保存书签，启动恢复并兼容旧 folderBookmark。更新只替换各自快照，合并排序且去重；菜单显示每个目录及错误，唤醒重启全部 watcher。
+
+macOS 集成测试通过两个自建目录同时发布真实文件、重复添加去重、跨目录路径去重、重启恢复及保留默认 Downloads。既有文件操作/废纸篓/显示/拖拽数据回归通过。
+
+DMG 构建脚本 scripts/build-dmg.sh，包含 Clothesline.app、Applications 链接、MIT 与安装说明，生成 SHA-256。发布候选 v0.1.0-rc.1，Apple Silicon / macOS 14+，未 Developer ID 签名或公证。

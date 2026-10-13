@@ -8,15 +8,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let line = Line()
     private var panel: LinePanel!
     private var statusItem: NSStatusItem!
-    private var watcher: DownloadsWatcher?
+    private var monitors: FolderMonitors?
     private var hotkey: HotKey?
     private var pointerTimer: Timer?
     private var wakeObserver: NSObjectProtocol?
-    private var selectedFolder: URL!
-    private var scopedAccess = false
     private(set) var pinned = UserDefaults.standard.bool(forKey: "alwaysShowLine")
     private var lastInside = Date.distantPast
-    private var watchFailure: String?
     private var currentScreen: NSScreen?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -43,82 +40,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
 
-        let chosen = restoreFolder() ?? Self.defaultFolder
-        switchToFolder(chosen, alreadyScoped: scopedAccess)
+        monitors = FolderMonitors { [weak self] in self?.line.adopt($0) }
+        monitors?.start()
         hotkey = HotKey { [weak self] in self?.togglePinned() }
         pointerTimer = Timer.scheduledTimer(withTimeInterval: 0.10, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.pollPointer() }
         }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.watcher?.wake() }
+                MainActor.assumeIsolated { self?.monitors?.wake() }
             }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        watcher?.stop()
+        monitors?.stop()
         pointerTimer?.invalidate()
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
-        if scopedAccess { selectedFolder?.stopAccessingSecurityScopedResource() }
     }
 
-    private static var defaultFolder: URL {
-        FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads", isDirectory: true)
-    }
-
-    private func restoreFolder() -> URL? {
-        guard let data = UserDefaults.standard.data(forKey: "folderBookmark") else { return nil }
-        var stale = false
-        if let url = (try? URL(resolvingBookmarkData: data,
-                             options: [.withSecurityScope], relativeTo: nil,
-                             bookmarkDataIsStale: &stale)) ?? (try? URL(resolvingBookmarkData: data,
-                             options: [], relativeTo: nil, bookmarkDataIsStale: &stale)) {
-            scopedAccess = url.startAccessingSecurityScopedResource()
-            return url
-        }
-        return nil
-    }
-
-    private func switchToFolder(_ url: URL, alreadyScoped: Bool = false) {
-        watcher?.stop()
-        if scopedAccess { selectedFolder?.stopAccessingSecurityScopedResource() }
-        selectedFolder = url
-        scopedAccess = alreadyScoped
-        watcher = DownloadsWatcher(folder: url,
-            onUpdate: { [weak self] files in
-                self?.line.adopt(files)
-            },
-            onFailure: { [weak self] message in
-                self?.watchFailure = message
-            })
-        watcher?.start()
-    }
-
-    private func chooseFolder() {
+    private func addMonitoredFolders() {
         let picker = NSOpenPanel()
         picker.canChooseFiles = false
         picker.canChooseDirectories = true
-        picker.allowsMultipleSelection = false
-        picker.prompt = "监控此文件夹"
-        picker.message = "选择下载目录。自动监听不会修改原文件；只有明确选择“移到废纸篓”才会移除原文件。"
-        picker.directoryURL = selectedFolder
+        picker.allowsMultipleSelection = true
+        picker.prompt = "添加监控文件夹"
+        picker.message = "新文件夹与 Downloads 同时监控，不会替换已有监控。"
+        picker.directoryURL = FolderMonitors.downloads
         NSApp.activate(ignoringOtherApps: true)
-        guard picker.runModal() == .OK, let url = picker.url else { return }
-        let scoped = url.startAccessingSecurityScopedResource()
-        // For ad-hoc/non-sandboxed local builds, withSecurityScope might not
-        // be available. A chosen URL still works in that situation.
-        if let data = try? url.bookmarkData(options: [.withSecurityScope],
-                                            includingResourceValuesForKeys: nil, relativeTo: nil) {
-            UserDefaults.standard.set(data, forKey: "folderBookmark")
-        } else {
-            // Store a normal bookmark as a best-effort fallback.
-            if let data = try? url.bookmarkData(options: [],
-                                                includingResourceValuesForKeys: nil, relativeTo: nil) {
-                UserDefaults.standard.set(data, forKey: "folderBookmark")
-            }
+        guard picker.runModal() == .OK else { return }
+        for url in picker.urls {
+            do { try monitors?.add(url) }
+            catch { NSAlert(error: error).runModal() }
         }
-        switchToFolder(url, alreadyScoped: scoped)
     }
 
     private func recalculateCapacity() {
@@ -194,19 +147,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // Dynamic menu. No app menu or Dock icon is required.
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        let path = selectedFolder?.path ?? "Downloads"
         let header = NSMenuItem(title: "晾衣绳 · Clothesline", action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
-        let folderName = NSMenuItem(title: "监控：\(selectedFolder?.lastPathComponent ?? "Downloads")",
-                                   action: nil, keyEquivalent: "")
-        folderName.isEnabled = false
-        folderName.toolTip = path
-        menu.addItem(folderName)
-        if let watchFailure {
-            let problem = NSMenuItem(title: "⚠ \(watchFailure)", action: nil, keyEquivalent: "")
-            problem.isEnabled = false
-            menu.addItem(problem)
+        for folder in monitors?.folders ?? [] {
+            let name = NSMenuItem(title: "监控：\(folder.lastPathComponent)", action: nil, keyEquivalent: "")
+            name.isEnabled = false
+            name.toolTip = folder.path
+            menu.addItem(name)
+            if let failure = monitors?.failures[folder.standardizedFileURL.path] {
+                let problem = NSMenuItem(title: "⚠ \(failure)", action: nil, keyEquivalent: "")
+                problem.isEnabled = false
+                menu.addItem(problem)
+            }
         }
         menu.addItem(.separator())
         let show = ClosureMenuItem("一直显示晾衣绳") { [weak self] in self?.togglePinned() }
@@ -216,11 +169,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         autoHide.state = pinned ? .off : .on
         menu.addItem(autoHide)
         menu.addItem(ClosureMenuItem("挂上文件夹…") { [weak self] in self?.attachFolder() })
-        menu.addItem(ClosureMenuItem("打开下载文件夹") { [weak self] in
-            guard let self else { return }
-            NSWorkspace.shared.open(self.selectedFolder)
+        menu.addItem(ClosureMenuItem("打开下载文件夹") {
+            NSWorkspace.shared.open(FolderMonitors.downloads)
         })
-        menu.addItem(ClosureMenuItem("选择监控文件夹…") { [weak self] in self?.chooseFolder() })
+        menu.addItem(ClosureMenuItem("添加监控文件夹…") { [weak self] in self?.addMonitoredFolders() })
         menu.addItem(.separator())
 
         let keepSubmenu = NSMenu(title: "保留文件数量")
