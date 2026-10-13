@@ -11,7 +11,11 @@ scripts/test-core.sh 与 scripts/test-macos.sh 通过，后者增加同时监听
 ## DMG / GitHub
 scripts/build-dmg.sh 重建本机架构 Release 与压缩 DMG，包含应用、Applications 链接、LICENSE 和安装说明，生成 SHA-256。发行标签 v0.1.0-rc.1；文件 Clothesline-0.1.0-rc.1-arm64.dmg 与 .sha256。下载入口在 README 顶部。本轮用户明确授权 GitHub 下载发布；候选版未 Developer ID 签名/公证，要求 macOS 14+ / Apple Silicon，首次打开可能被系统阻止，不提供 Intel 包。
 
-hdiutil verify 与只读挂载检查通过：应用签名、许可、arm64 架构、Info.plist、Applications 链接均正常，测试镜像已卸载。随后提交、push、创建候选标签并发布预发行 Release，检查远端资产和 SHA。仅上传安装包和校验文件，不上传自建测试目录或用户 Downloads。
+hdiutil verify 与只读挂载检查通过：应用签名、许可、arm64 架构、Info.plist、Applications 链接均正常，测试镜像已卸载。代码提交 0b20fd1 已推送，候选标签 v0.1.0-rc.1 和预发行 Release 已发布，两个资产下载入口已核对；GitHub 资产摘要与本地 SHA-256 一致。仅上传安装包和校验文件，不上传自建测试目录或用户 Downloads。
 
 ## 尚待验收
 微信/编辑器实际拖入、完整浏览器下载流程、多屏/权限、macOS 14 真机兼容性仍待验收。每轮同步状态和交接，再推送 GitHub。没有定时后台同步。
+
+发布链接：https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.1
+DMG SHA-256：9fcfb9f4f9531f5c5db376a66ad0b1ac3889ab9b7d9d0a29a7452acc368be402。
+多目录候选应用已在本机启动。
