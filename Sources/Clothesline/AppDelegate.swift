@@ -124,6 +124,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func pollPointer() {
+        // AppKit owns mouse tracking from mouseDown through the drag session.
+        // Do not turn the source window click-through, hide/reposition it, or
+        // move it to another screen while that tracking is in progress.
+        if line.pressedID != nil || line.draggingID != nil {
+            lastInside = Date()
+            panel.ignoresMouseEvents = false
+            return
+        }
         guard let screen = LinePanel.screenUnderPointer() else { return }
         if screen.frame != currentScreen?.frame {
             currentScreen = screen

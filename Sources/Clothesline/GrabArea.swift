@@ -21,8 +21,14 @@ struct GrabArea: NSViewRepresentable {
         view.onClick = { line.quickLook(id) }
         view.onDoubleClick = { line.open(id) }
         view.onDismiss = { line.dismiss(id) }
-        view.onPressChange = { line.pressedID = $0 ? id : nil }
-        view.onDragChange = { line.draggingID = $0 ? id : nil }
+        view.onPressChange = {
+            line.pressedID = $0 ? id : nil
+            if !$0 { line.updateVisibleItems() }
+        }
+        view.onDragChange = {
+            line.draggingID = $0 ? id : nil
+            if !$0 { line.updateVisibleItems() }
+        }
         view.menuProvider = {
             let menu = NSMenu()
             menu.addItem(ClosureMenuItem("快速预览") { line.quickLook(id) })
@@ -38,6 +44,16 @@ struct GrabArea: NSViewRepresentable {
 }
 
 final class GrabView: NSView, NSDraggingSource {
+    static let filenamesType = NSPasteboard.PasteboardType("NSFilenamesPboardType")
+
+    static func filePasteboardItem(_ url: URL) -> NSPasteboardItem {
+        let item = NSPasteboardItem()
+        let file = url.standardizedFileURL
+        item.setString(file.absoluteString, forType: .fileURL)
+        // Some desktop drop targets still ask for Finder's legacy path array.
+        item.setPropertyList([file.path], forType: filenamesType)
+        return item
+    }
     var file: URL?
     var dragImage: NSImage?
     var onClick: () -> Void = {}
@@ -70,13 +86,13 @@ final class GrabView: NSView, NSDraggingSource {
         guard hypot(point.x - start.x, point.y - start.y) > 5 else { return }
         dragging = true
         pendingSingleClick?.cancel()
+        onDragChange(true)
         onPressChange(false)
-        let dragged = NSDraggingItem(pasteboardWriter: file as NSURL)
+        let dragged = NSDraggingItem(pasteboardWriter: Self.filePasteboardItem(file))
         // A subtle, system-native drag image (file thumbnail/icon).
         dragged.setDraggingFrame(bounds, contents: dragImage)
         let session = beginDraggingSession(with: [dragged], event: event, source: self)
         session.animatesToStartingPositionsOnCancelOrFail = true
-        onDragChange(true)
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -108,11 +124,14 @@ final class GrabView: NSView, NSDraggingSource {
         context == .outsideApplication ? [.copy] : []
     }
 
+    func ignoreModifierKeys(for session: NSDraggingSession) -> Bool { true }
+
     func draggingSession(_ session: NSDraggingSession,
                          endedAt screenPoint: NSPoint,
                          operation: NSDragOperation) {
         dragging = false
         downPoint = nil
+        onPressChange(false)
         onDragChange(false)
     }
 }

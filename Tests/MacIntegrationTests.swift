@@ -96,6 +96,28 @@ struct MacIntegrationTests {
         precondition(delegate.pinned && AppDelegate().pinned, "always show persists across app instances")
         delegate.setAlwaysVisible(false)
         precondition(!AppDelegate().pinned, "auto hide persists across app instances")
+        let dragPayload = GrabView.filePasteboardItem(file)
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        precondition(board.writeObjects([dragPayload]), "write drag payload")
+        let dropped = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]
+        precondition(dropped?.first?.standardizedFileURL.path == file.standardizedFileURL.path,
+                     "drop target must decode real file URL")
+        precondition(board.propertyList(forType: GrabView.filenamesType) as? [String] == [file.standardizedFileURL.path],
+                     "legacy desktop drop target must decode file paths")
+        let dragLine = Line()
+        dragLine.adopt(try DownloadIndex.scan(folder).filter { !$0.isDirectory })
+        let originalID = dragLine.items[0].id
+        dragLine.pressedID = originalID
+        dragLine.adopt([])
+        precondition(dragLine.items.first?.id == originalID, "press must retain drag source across scan")
+        dragLine.draggingID = originalID
+        dragLine.pressedID = nil
+        dragLine.updateVisibleItems()
+        precondition(dragLine.items.first?.id == originalID, "drag must retain source until session ends")
+        dragLine.draggingID = nil
+        dragLine.updateVisibleItems()
+        precondition(dragLine.items.isEmpty, "pending scan applied after drag")
         let drag = GrabView()
         precondition(drag.draggingSession(NSDraggingSession(), sourceOperationMaskFor: .outsideApplication) == .copy)
         print("PASS: macOS live watcher, temporary rename, actual rope URL, dismissal/restart/clear and source bytes, copy-only drag, attached folders, recoverable file/folder trash, stale deletion rejection, display persistence")

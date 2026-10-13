@@ -65,6 +65,8 @@ final class Line: ObservableObject {
     }
 
     func updateVisibleItems() {
+        // Preserve the AppKit drag source even when the Downloads scan changes.
+        guard pressedID == nil, draggingID == nil else { return }
         let attached = attachedFolders.compactMap { try? DownloadIndex.read($0) }
         let attachedPaths = Set(attached.map(\.path))
         let combined = attached + latest.filter { !attachedPaths.contains($0.path) }
