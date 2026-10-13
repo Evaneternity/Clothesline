@@ -66,3 +66,9 @@ GitHub 同步恢复：README 中文介绍及 T 恤图标修改已成功推送，
 使用演示：用户提供 36.2 秒 2560×1080 MOV，转换为同分辨率 H.264 MP4（约 4 MB），完整解码检查通过；README 封面与播放/下载入口，注明开发版本与 rc.1 安装包差别。
 
 演示视频附件：已上传至 GitHub user-attachments（仓库 Issue #1 保存来源），README 改为独立视频地址以显示内嵌播放器；保留 Release MP4 下载入口。本轮仅文档更新。
+
+## rc.2 与英文文档（2026-10-13）
+
+当前源码重建 v0.1.0-rc.2 / build 2，包含彩色夹子。核心及 macOS 集成测试通过（既有旧式粘贴板/CoreDrag 诊断仍出现，测试通过）；DMG verify、只读挂载、严格签名验证、版本和 LICENSE 核对通过，Applications 链接正确。仍为 arm64 / macOS 14+、ad-hoc 签名、未公证。SHA-256：7f9eb5e71bc3cfc205c879060dda57c0e45a5cd08b6fa7c34372c63cf6a8fec1。
+
+新增 README.en.md，首页提供 English / 简体中文切换；翻译介绍、功能、演示、安装、安全限制与版权。应用 UI 仍为中文，未新增本地化。rc.1 保留供历史版本下载，首页改指向 rc.2。

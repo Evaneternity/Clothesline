@@ -1,5 +1,7 @@
 # <img src="assets/clothesline-icon.png" alt="Clothesline 图标" width="48" height="48"> Clothesline · 晾衣绳
 
+[English](README.en.md) · **简体中文**
+
 **把刚刚下载完成的真实文件挂在 macOS 屏幕顶部。**
 
 Clothesline（晾衣绳）是一款 macOS 原生文件工具，将最近下载或新增的文件与目录，以卡片形式挂在屏幕顶部，方便随手预览、打开、拖拽和管理。
@@ -16,7 +18,7 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
 **[下载演示视频（MP4，约 4 MB）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-demo.mp4)**
 
-录屏展示的是当前开发版本，彩色夹子尚未包含在 rc.1 DMG 中。
+最新 rc.2 安装包已包含录屏中的彩色夹子。
 
 ## 功能（V0.1）
 
@@ -39,7 +41,7 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
 ## 下载安装（V0.1 候选版）
 
-[下载 Clothesline DMG（Apple Silicon）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-0.1.0-rc.1-arm64.dmg) · [发行说明和 SHA-256 校验文件](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.1)
+[下载 Clothesline DMG（Apple Silicon）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.2/Clothesline-0.1.0-rc.2-arm64.dmg) · [发行说明和 SHA-256 校验文件](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.2)
 
 要求 macOS 14+、Apple Silicon（M 系列）；本次不提供 Intel 安装包。打开 DMG，将 Clothesline.app 拖到 Applications，再打开应用。当前仅 ad-hoc 签名，未 Developer ID 签名/公证；macOS 可能阻止首次运行，请确认来自本仓库后，按系统“隐私与安全性”的提示允许打开。
 

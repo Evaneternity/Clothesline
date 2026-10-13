@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 scripts/build-app.sh release
 ARCH="$(uname -m)"
-DMG="build/Clothesline-0.1.0-rc.1-${ARCH}.dmg"
+DMG="build/Clothesline-0.1.0-rc.2-${ARCH}.dmg"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 ditto build/Clothesline.app "$STAGE/Clothesline.app"
