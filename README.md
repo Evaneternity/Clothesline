@@ -2,7 +2,9 @@
 
 **把刚刚下载完成的真实文件挂在 macOS 屏幕顶部。**
 
-Inspired by [Tendedero](https://github.com/alejandrobujan/tendedero) by Alejandro Buján, with its light transparent rope, clothespins, spring animations, and auto-hide interaction. Unlike Tendedero's screenshot workflow, Clothesline focuses on actual files in Downloads. Clothesline has its **own name and original icon** and does not claim endorsement by the Tendedero author.
+Clothesline（晾衣绳）是一款 macOS 原生文件工具，将最近下载或新增的文件与目录，以卡片形式挂在屏幕顶部，方便随手预览、打开、拖拽和管理。
+
+默认监控 Downloads，也可添加多个监控文件夹，或手动挂上常用目录。晾衣绳支持自动隐藏与一直显示；取下卡片只隐藏入口，删除则通过独立的“移到废纸篓”操作完成。所有功能在本机运行，无需账号或云端服务。
 
 **状态：V0.1 本地候选版。** 已在 macOS 26.6.2 / Apple Silicon 构建并启动，核心与 macOS 监听、安全测试通过。完整 UI 验收仍待完成，见 PROJECT_STATE.md 和 HANDOFF_LATEST.md。
 

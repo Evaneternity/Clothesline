@@ -54,3 +54,5 @@ macOS 集成测试通过两个自建目录同时发布真实文件、重复添�
 DMG 构建脚本 scripts/build-dmg.sh，包含 Clothesline.app、Applications 链接、MIT 与安装说明，生成 SHA-256。发布候选 v0.1.0-rc.1，Apple Silicon / macOS 14+，未 Developer ID 签名或公证。
 
 发行完成：代码提交 0b20fd1，预发行标签 v0.1.0-rc.1。GitHub Release 两个资产已核对，DMG 摘要与本地一致；应用包已只读挂载检查并启动本地应用。
+
+本轮文档更新：README 开头改为简洁中文应用介绍，移除重复的灵感段落；“版权与来源”和 LICENSE 保留。未修改 logo 或应用功能。

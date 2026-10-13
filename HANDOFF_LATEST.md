@@ -1,21 +1,11 @@
-# 最新交接：多目录监控与 DMG 候选发行
+# 最新交接：README 应用介绍
 
-2026-10-13（Asia/Shanghai）。前序 e409f86。
+2026-10-13（Asia/Shanghai）；前序 adb5e59。
 
-## 改动
-FolderMonitors 管理多个 DownloadsWatcher，默认保留 Downloads；菜单由“选择监控文件夹…”改为“添加监控文件夹…”，支持多选，新增目录不替换原目录。各 watcher 独立完成 gate，快照合并去重排序；失败按目录提示，唤醒全部重启。书签保存在 monitoredFolderBookmarks，兼容旧 folderBookmark。手动挂目录仍为独立快捷入口。
+按用户截图指定位置，将 README 开头的英文灵感段落替换为中文应用介绍：原生 macOS 工具、顶部文件卡片、多目录监控、手动目录入口、自动隐藏/一直显示，以及取下和废纸篓的区别。
 
-## 验证
-scripts/test-core.sh 与 scripts/test-macos.sh 通过，后者增加同时监听两个自建目录、重复添加、路径去重及重启恢复默认 Downloads。旧废纸篓/源文件安全/拖拽数据/持续显示回归通过。没有改动用户监控设置或移动用户文件。
+用户划掉的 logo 需求未执行。保留“版权与来源”和完整 LICENSE。仅文档修改，git diff --check；不重建或重新发布 DMG。继续候选版实际拖拽、最低系统兼容和 Apple 签名/公证准备。
 
-## DMG / GitHub
-scripts/build-dmg.sh 重建本机架构 Release 与压缩 DMG，包含应用、Applications 链接、LICENSE 和安装说明，生成 SHA-256。发行标签 v0.1.0-rc.1；文件 Clothesline-0.1.0-rc.1-arm64.dmg 与 .sha256。下载入口在 README 顶部。本轮用户明确授权 GitHub 下载发布；候选版未 Developer ID 签名/公证，要求 macOS 14+ / Apple Silicon，首次打开可能被系统阻止，不提供 Intel 包。
+本轮提交后推送 main，核对远端 SHA。
 
-hdiutil verify 与只读挂载检查通过：应用签名、许可、arm64 架构、Info.plist、Applications 链接均正常，测试镜像已卸载。代码提交 0b20fd1 已推送，候选标签 v0.1.0-rc.1 和预发行 Release 已发布，两个资产下载入口已核对；GitHub 资产摘要与本地 SHA-256 一致。仅上传安装包和校验文件，不上传自建测试目录或用户 Downloads。
-
-## 尚待验收
-微信/编辑器实际拖入、完整浏览器下载流程、多屏/权限、macOS 14 真机兼容性仍待验收。每轮同步状态和交接，再推送 GitHub。没有定时后台同步。
-
-发布链接：https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.1
-DMG SHA-256：9fcfb9f4f9531f5c5db376a66ad0b1ac3889ab9b7d9d0a29a7452acc368be402。
-多目录候选应用已在本机启动。
+同步状态：本地介绍修改已提交；GitHub HTTPS 推送两次连接失败（443 超时，fetch 另报 HTTP2 framing error），尚未同步。API 核对远端 main 仍为 adb5e59。网络恢复后优先推送此文档提交，不能宣称已上线。
