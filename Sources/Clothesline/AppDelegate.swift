@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var wakeObserver: NSObjectProtocol?
     private var selectedFolder: URL!
     private var scopedAccess = false
-    private var pinned = false
+    private(set) var pinned = UserDefaults.standard.bool(forKey: "alwaysShowLine")
     private var lastInside = Date.distantPast
     private var watchFailure: String?
     private var currentScreen: NSScreen?
@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         panel.orderFrontRegardless()
         currentScreen = LinePanel.screenUnderPointer()
         recalculateCapacity()
+        line.revealed = pinned
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.title = "🧺"
@@ -94,7 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         picker.canChooseDirectories = true
         picker.allowsMultipleSelection = false
         picker.prompt = "监控此文件夹"
-        picker.message = "选择下载目录。Clothesline 只读取文件信息与预览，不移动或删除原文件。"
+        picker.message = "选择下载目录。自动监听不会修改原文件；只有明确选择“移到废纸篓”才会移除原文件。"
         picker.directoryURL = selectedFolder
         NSApp.activate(ignoringOtherApps: true)
         guard picker.runModal() == .OK, let url = picker.url else { return }
@@ -147,14 +148,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         panel.ignoresMouseEvents = !shouldReveal || !overCard
     }
 
-    private func togglePinned() {
-        pinned.toggle()
+    func setAlwaysVisible(_ enabled: Bool) {
+        pinned = enabled
+        UserDefaults.standard.set(enabled, forKey: "alwaysShowLine")
         if pinned {
-            panel.placeOnScreen()
+            panel?.placeOnScreen()
             line.revealed = true
         } else {
             lastInside = Date.distantPast
             line.revealed = false
+        }
+    }
+
+    private func togglePinned() { setAlwaysVisible(!pinned) }
+
+    private func attachFolder() {
+        let picker = NSOpenPanel()
+        picker.canChooseFiles = false
+        picker.canChooseDirectories = true
+        picker.allowsMultipleSelection = true
+        picker.prompt = "挂上晾衣绳"
+        picker.message = "挂上文件夹快捷入口，保留在原位置。Downloads 监听仍然继续。"
+        NSApp.activate(ignoringOtherApps: true)
+        guard picker.runModal() == .OK else { return }
+        for url in picker.urls {
+            do { try line.attachFolder(url) }
+            catch { NSAlert(error: error).runModal() }
         }
     }
 
@@ -176,9 +195,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(problem)
         }
         menu.addItem(.separator())
-        let show = ClosureMenuItem(pinned ? "取消固定显示" : "固定显示晾衣绳") { [weak self] in self?.togglePinned() }
+        let show = ClosureMenuItem("一直显示晾衣绳") { [weak self] in self?.togglePinned() }
         show.state = pinned ? .on : .off
         menu.addItem(show)
+        let autoHide = ClosureMenuItem("自动隐藏晾衣绳") { [weak self] in self?.setAlwaysVisible(false) }
+        autoHide.state = pinned ? .off : .on
+        menu.addItem(autoHide)
+        menu.addItem(ClosureMenuItem("挂上文件夹…") { [weak self] in self?.attachFolder() })
         menu.addItem(ClosureMenuItem("打开下载文件夹") { [weak self] in
             guard let self else { return }
             NSWorkspace.shared.open(self.selectedFolder)

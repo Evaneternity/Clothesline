@@ -8,16 +8,38 @@ struct DownloadFile: Equatable {
     let modified: Date
     let created: Date
     let added: Date?
+    var isDirectory: Bool = false
 
     var path: String { url.standardizedFileURL.path }
     var recency: Date { added ?? created }
     /// Keeps an intentionally dismissed file hidden until a *new* download replaces it.
     var fingerprint: String {
-        "\(path)|\(size)|\(modified.timeIntervalSince1970)|\(created.timeIntervalSince1970)"
+        if isDirectory { return "\(path)|directory|\(created.timeIntervalSince1970)" }
+        return "\(path)|\(size)|\(modified.timeIntervalSince1970)|\(created.timeIntervalSince1970)"
     }
 }
 
 enum DownloadIndex {
+    private static let keys: Set<URLResourceKey> = [
+        .isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey, .isHiddenKey,
+        .fileSizeKey, .creationDateKey, .contentModificationDateKey, .addedToDirectoryDateKey
+    ]
+
+    static func read(_ url: URL) throws -> DownloadFile? {
+        // Scan URLs may carry prefetched resource values. Read fresh metadata,
+        // especially when validating an explicit Trash action against its card.
+        let freshURL = URL(fileURLWithPath: url.path)
+        let info = try freshURL.resourceValues(forKeys: keys)
+        guard info.isSymbolicLink != true, info.isHidden != true,
+              info.isRegularFile == true || info.isDirectory == true else { return nil }
+        let directory = info.isDirectory == true
+        let size = directory ? 0 : (info.fileSize ?? -1)
+        guard size >= 0 else { return nil }
+        let modified = info.contentModificationDate ?? .distantPast
+        return DownloadFile(url: url, size: Int64(size), modified: modified,
+                            created: info.creationDate ?? modified, added: info.addedToDirectoryDate,
+                            isDirectory: directory)
+    }
     private static let temporarySuffixes: Set<String> = [
         "crdownload", "download", "part", "partial", "tmp", "temp",
         "opdownload", "aria2", "filepart", "dms", "downloadfile"
@@ -30,12 +52,8 @@ enum DownloadIndex {
     }
 
     static func scan(_ directory: URL) throws -> [DownloadFile] {
-        let keys: [URLResourceKey] = [
-            .isRegularFileKey, .isHiddenKey, .fileSizeKey,
-            .creationDateKey, .contentModificationDateKey, .addedToDirectoryDateKey
-        ]
         let urls = try FileManager.default.contentsOfDirectory(
-            at: directory, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles])
+            at: directory, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles])
         // Browsers can keep a temporary sibling while streaming into a
         // final-looking destination filename. Suppress that destination until
         // the sibling disappears (e.g. foo.pdf.crdownload -> foo.pdf).
@@ -46,14 +64,8 @@ enum DownloadIndex {
         return urls.compactMap { url -> DownloadFile? in
             guard isCandidateName(url.lastPathComponent),
                   !inProgress.contains(url.lastPathComponent),
-                  let info = try? url.resourceValues(forKeys: Set(keys)),
-                  info.isRegularFile == true,
-                  info.isHidden != true,
-                  let size = info.fileSize, size >= 0 else { return nil }
-            let modified = info.contentModificationDate ?? .distantPast
-            let created = info.creationDate ?? modified
-            return DownloadFile(url: url, size: Int64(size), modified: modified,
-                                created: created, added: info.addedToDirectoryDate)
+                  let file = try? read(url) else { return nil }
+            return file
         }
         .sorted { a, b in
             if a.recency != b.recency { return a.recency > b.recency }

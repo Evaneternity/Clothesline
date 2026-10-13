@@ -45,8 +45,8 @@ struct DownloadIndexTests {
         check(gate.completed([], now: now).isEmpty, "empty scan")
         check(gate.completed([file("a.pdf")], now: now).isEmpty, "reappearing path needs fresh samples")
 
-        // File system scan: ordinary files only; subdirectories and temporary
-        // browser extensions are excluded even if they exist on disk.
+        // File system scan includes ordinary files and directories, but excludes
+        // browser temporary files and temporary download directories.
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("clothesline-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -59,10 +59,24 @@ struct DownloadIndexTests {
         }
         try FileManager.default.createDirectory(at: folder.appendingPathComponent("folder.zip"),
                                                 withIntermediateDirectories: false)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("unfinished.download"),
+                                                withIntermediateDirectories: false)
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("link"),
+                                                  withDestinationURL: folder.appendingPathComponent("research.pdf"))
         let results = try DownloadIndex.scan(folder)
-        check(Set(results.map { $0.url.lastPathComponent }) == Set(["research.pdf"]),
-              "scan should return only real, completed-looking regular files")
+        check(Set(results.map { $0.url.lastPathComponent }) == Set(["research.pdf", "folder.zip"]),
+              "scan should include files and folders, excluding incomplete downloads")
 
+        let directory = results.first { $0.isDirectory }!
+        check(directory.url.lastPathComponent == "folder.zip", "directory metadata")
+        var changedDirectory = directory
+        changedDirectory = DownloadFile(url: directory.url, size: 0, modified: now,
+                                        created: directory.created, added: directory.added, isDirectory: true)
+        check(directory.fingerprint == changedDirectory.fingerprint,
+              "directory content updates must not invalidate dismissal")
+        var directoryGate = DownloadCompletionGate()
+        check(directoryGate.completed([directory], now: now.addingTimeInterval(10)).isEmpty, "folder needs stable samples")
+        check(directoryGate.completed([directory], now: now.addingTimeInterval(11)).count == 1, "stable folder qualifies")
         print("PASS: name filters, stable samples, quiet period, rename/reset safety, folder scanning")
     }
 }

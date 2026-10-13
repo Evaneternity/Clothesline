@@ -1,25 +1,28 @@
-# 最新交接：V0.1 接管与 macOS 首次验证
+# 最新交接：V0.1 文件删除、目录与持续显示
 
 日期：2026-10-13（Asia/Shanghai）
+前序基线：6939f43；接管与编译修复：64d3aca。本轮保持 0.1.0 候选，不增加正式版本标签。
 
-## 已完成
-保存原始基线提交 6939f43；建立 main、忽略构建产物及开发约定。完成源码/脚本/安全审查，修复 Quick Look 和 MainActor 编译错误、隐藏记录丢失及普通书签兜底；应用包附带 MIT。新增 macOS 实际 watcher 与卡片模型回归测试。
+## 本轮改动
+用户要求允许删除、挂目录及选择一直显示。实现：
+- 卡片右键“移到废纸篓…”；确认说明原文件/目录会移动，可恢复；默认取消。×、取下、清空仍非破坏性。
+- DownloadIndex 读取文件/目录类型，排除临时下载目录与符号链接；删除校验使用新鲜元数据，失败不隐藏卡片。
+- Downloads 顶层目录自动挂上，手动“挂上文件夹…”多选目录；书签保存并去重，手动目录优先显示，取下状态不会因内容改变而丢失。
+- 一直显示/自动隐藏两项菜单与快捷键，UserDefaults 保存并启动恢复。
+- 同步 README、AGENTS 安全约定、路线图与变更记录。
 
-## 重现
+## 重现与测试
 ```bash
 scripts/test-core.sh
 scripts/test-macos.sh
-scripts/build-app.sh debug
 scripts/build-app.sh release
 open build/Clothesline.app
 ```
-SwiftPM 在受限执行环境中可能因 sandbox-exec 被阻止，需允许正常本机构建；不应将沙盒权限错误当作 SDK 不兼容。项目缓存已放入 .build。
+核心测试与 macOS 集成测试通过，Release 构建成功。macOS 废纸篓测试需正常本机权限；执行沙盒限制会导致 513 权限错误，不是应用逻辑失败。SwiftPM 也需要正常本机构建权限。
 
-测试覆盖：临时扩展名过滤、事件/轮询、真实文件 URL、取下/重启/清空非破坏性。Mac 集成测试的人工 NSDraggingSession 会产生 CoreDragDispose -1850 诊断，测试断言仍通过；实际拖拽需 UI 验收。
+测试仅使用自建唯一命名临时文件及含 child.txt 的目录；调用实际 trashItem 后读取内容并恢复，最后清理自建目录。人工构造的 NSDraggingSession 仍有 CoreDragDispose -1850 诊断，但源 copy 掩码断言通过。
 
-Debug 与 Release 构建均成功；Release 应用包通过签名、Info.plist 和许可证一致性检查。
+新版 Release 已启动，应用可访问性树显示真实 Downloads 目录，已用文件系统确认目录类型。未删除用户现有文件，前序 Downloads 测试文本仍保留。完整右键弹窗/目录选择/鼠标显示 UI 不宣称已自动化验收。
 
-## 运行验证与下一步
-应用已启动，默认 Downloads 已出现现有文件及新建测试文件 Clothesline-acceptance-20261013.txt。测试文件内容为 Clothesline V0.1 safe acceptance fixture，保留不删除。UI 自动化透明浮层截图空白，点击返回 offscreen/notImplemented，不能声称预览/拖拽已实测。
-
-下一轮优先：人工顶部展开/⌃⌥T，预览测试文件，双击打开，拖到专用测试文件夹确认复制，×/清空后确认 Downloads 原件。再验证 Chrome/Safari 下载及权限拒绝。完成前保持候选版，不添加新功能、不打正式版本标签。每轮更新三份记录并提交 Git。
+## 下一轮
+人工验收右键取消和确认删除（使用自建文件与目录）、Finder 废纸篓恢复、×仅取下；菜单挂目录、重启恢复、一直显示与自动隐藏切换。再完成既有浏览器下载、预览/打开/拖拽、多屏与权限验收。每轮更新状态、交接、CHANGELOG 后与代码一起提交 Git。

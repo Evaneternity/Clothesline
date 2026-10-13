@@ -31,6 +31,7 @@ struct GrabArea: NSViewRepresentable {
             menu.addItem(ClosureMenuItem("复制文件") { line.copy(id) })
             menu.addItem(.separator())
             menu.addItem(ClosureMenuItem("从晾衣绳取下（保留原文件）") { line.dismiss(id) })
+            menu.addItem(ClosureMenuItem("移到废纸篓…") { line.requestTrash(id) })
             return menu
         }
     }

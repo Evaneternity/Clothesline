@@ -13,6 +13,7 @@ V0.1 优先交付可运行的 macOS 14+ 原生应用。参考 Tendedero 的视�
 
 ## 安全与许可
 - UI 取下、清空、退出只改变展示状态，不删除、移动或覆盖源文件。
+- 用户明确选择“移到废纸篓”并确认后才允许调用 trashItem；禁止永久删除。删除前核对卡片元数据，失败时保留卡片并提示。目录删除包含其内容。
 - 拖出只提供 copy；测试使用唯一命名的自建文件，不能清理用户下载。
 - 读取 Downloads 及自选目录仅用于本地功能，不增加网络或遥测。
 - 保留 LICENSE 中 Alejandro Buján 的版权和 MIT 全文；应用包也携带 LICENSE。使用 Clothesline 独立名称及 assets/clothesline-icon.png，禁止引入上游名称、图标和文档图片。

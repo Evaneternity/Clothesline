@@ -6,11 +6,14 @@ struct MacIntegrationTests {
     @MainActor static func main() throws {
         _ = NSApplication.shared
         let defaults = UserDefaults.standard
-        let old = defaults.object(forKey: "dismissedFiles")
-        defaults.removeObject(forKey: "dismissedFiles")
+        let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine"]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        for key in keys { defaults.removeObject(forKey: key) }
         defer {
-            if let old { defaults.set(old, forKey: "dismissedFiles") }
-            else { defaults.removeObject(forKey: "dismissedFiles") }
+            for (key, old) in zip(keys, saved) {
+                if let old { defaults.set(old, forKey: key) }
+                else { defaults.removeObject(forKey: key) }
+            }
         }
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Clothesline-acceptance-\(UUID())")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -52,8 +55,49 @@ struct MacIntegrationTests {
         precondition(line.items.isEmpty, "clear must hide card")
         let remainingBytes = try Data(contentsOf: file)
         precondition(remainingBytes == bytes, "dismiss/clear must preserve original bytes")
+        let directory = folder.appendingPathComponent("attached-folder", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        let child = directory.appendingPathComponent("child.txt")
+        try bytes.write(to: child)
+        try line.attachFolder(directory)
+        precondition(line.items.count == 1 && line.items[0].file.isDirectory, "manual folder on rope")
+        let restoredFolders = Line()
+        restoredFolders.adopt([])
+        precondition(restoredFolders.items.count == 1, "attached folder survives restart")
+        line.dismiss(line.items[0].id)
+        precondition(FileManager.default.fileExists(atPath: child.path), "take down preserves folder contents")
+        try line.attachFolder(directory)
+        let folderID = line.items[0].id
+        let trashedDirectory = try line.moveToTrash(folderID)
+        precondition(!FileManager.default.fileExists(atPath: directory.path), "folder moved out of original location")
+        let trashedChild = try Data(contentsOf: trashedDirectory.appendingPathComponent("child.txt"))
+        precondition(trashedChild == bytes && line.items.isEmpty, "folder contents recoverable in Trash")
+        try FileManager.default.moveItem(at: trashedDirectory, to: directory)
+        line.resetDismissed()
+        line.adopt(try DownloadIndex.scan(folder).filter { !$0.isDirectory })
+        let fileID = line.items[0].id
+        // A changed file must not be deleted using an old card's metadata.
+        try Data("changed".utf8).write(to: file)
+        do {
+            try line.moveToTrash(fileID)
+            preconditionFailure("stale file must be rejected")
+        } catch {
+            precondition(FileManager.default.fileExists(atPath: file.path) && line.items.count == 1,
+                         "failed trash must preserve source and card")
+        }
+        line.adopt(try DownloadIndex.scan(folder).filter { !$0.isDirectory })
+        let trashedFile = try line.moveToTrash(line.items[0].id)
+        precondition(!FileManager.default.fileExists(atPath: file.path) && line.items.isEmpty, "file trashed and card removed")
+        let recovered = try Data(contentsOf: trashedFile)
+        precondition(recovered == Data("changed".utf8), "file recoverable in Trash")
+        try FileManager.default.moveItem(at: trashedFile, to: file)
+        let delegate = AppDelegate()
+        delegate.setAlwaysVisible(true)
+        precondition(delegate.pinned && AppDelegate().pinned, "always show persists across app instances")
+        delegate.setAlwaysVisible(false)
+        precondition(!AppDelegate().pinned, "auto hide persists across app instances")
         let drag = GrabView()
         precondition(drag.draggingSession(NSDraggingSession(), sourceOperationMaskFor: .outsideApplication) == .copy)
-        print("PASS: macOS live watcher, temporary rename, actual rope URL, dismissal/restart/clear and source bytes, copy-only drag")
+        print("PASS: macOS live watcher, temporary rename, actual rope URL, dismissal/restart/clear and source bytes, copy-only drag, attached folders, recoverable file/folder trash, stale deletion rejection, display persistence")
     }
 }

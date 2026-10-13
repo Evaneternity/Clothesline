@@ -1,31 +1,33 @@
 # Clothesline V0.1 项目状态
 
 更新：2026-10-13（Asia/Shanghai）
-状态：本地候选版；macOS 构建/启动及核心链路通过，完整 UI 验收未完成。
+状态：本地候选版；Release 构建、核心与 macOS 集成测试通过，完整 UI 验收待完成。
 
-## 架构与范围
-SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏，SwiftUI 晾衣绳，Quick Look 缩略图/预览，Carbon 快捷键。DownloadsWatcher 使用目录 vnode 事件及 2 秒轮询；DownloadIndex 顶层扫描并过滤临时文件，要求两次稳定样本和至少 2 秒静默。Line 管理真实 URL、卡片与隐藏记录；GrabArea 通告 copy 拖拽。
+## 架构与功能
+SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏、SwiftUI 卡片、Quick Look、Carbon 快捷键。DownloadsWatcher 使用 vnode 事件及 2 秒轮询；DownloadIndex 扫描顶层文件与目录，排除隐藏项、符号链接及临时下载名，使用两次稳定样本和 2 秒静默期。
 
-## 本轮修复
-- 移除不存在的 QLPreviewPanelController 协议，使用 NSObject Quick Look 控制方法 override。
-- 布局位置函数标注 MainActor。
-- 空完成扫描不再清除持久隐藏记录；普通文件夹书签增加恢复兜底。
-- 项目内编译缓存；构建应用包包含 LICENSE；独立 Clothesline 名称和现有独立图标。
+本轮按用户要求完善：
+- 右键“移到废纸篓…”确认后操作原文件或目录及内容，失败提示，旧卡片元数据失效时拒绝删除。
+- Downloads 顶层目录自动显示；“挂上文件夹…”可选择其他目录，普通书签保留入口。手动目录优先显示，不改变 Downloads 监控。
+- 菜单“一直显示晾衣绳”/“自动隐藏晾衣绳”，⌃⌥T 切换；设置持久化并在启动时应用。
+- 目录使用系统图标，双击通过 Finder 打开；目录内容变化不清除取下状态。
 
-## 已有证据
-- 环境：macOS 26.6.2 / arm64，Apple Swift 6.3.3，Command Line Tools。
-- scripts/test-core.sh：通过文件过滤、稳定样本、静默期与真实目录扫描。
-- scripts/test-macos.sh：通过真实目录事件、临时文件重命名完成、真实 URL 卡片、取下/空扫描/重启/清空后隐藏与原文件字节不变、copy-only 源操作掩码。
-- Debug 和 Release 构建成功；Debug 应用已启动；codesign --verify --strict 与 Info.plist 检查通过。
-- 运行应用的可访问性树包含 Downloads 文件；新增 Clothesline-acceptance-20261013.txt 后自动出现其名称。测试文件保留供人工验收。
-- LICENSE 已核对上游 MIT 版权 Copyright (c) 2026 Alejandro Buján；完整许可随应用包分发。
+## 验证证据
+环境：macOS 26.6.2 / arm64，Apple Swift 6.3.3，Command Line Tools。
+- scripts/test-core.sh：通过文件/目录过滤、临时下载目录排除、符号链接排除、稳定样本、静默期、目录隐藏指纹稳定性。
+- scripts/test-macos.sh：通过真实目录监听、临时文件重命名、真实 URL 卡片、取下/空扫描/重启/清空保留源文件；手动目录跨重启、目录取下保留内容；文件及非空目录移到废纸篓、内容完整及恢复；已变更文件删除被拒绝；显示偏好跨实例持久化；copy-only 拖拽源掩码。
+- 废纸篓测试仅操作唯一命名的自建临时文件/目录，移入后立即恢复至测试目录，再清理测试目录，不清空用户废纸篓。
+- Release 构建并启动。运行应用的可访问性树新增实际 Downloads 目录 CEN_Submission_Package_Updated_2026-10-12，已核对其确为目录。
+- 本轮首次 Release 包通过 codesign --verify --strict、Info.plist 和 LICENSE 一致性检查。
 
-## 文件安全审查
-生产代码未调用删除、移动、覆盖下载源文件的 API。dismiss/dismissAll 仅写 UserDefaults 和刷新显示；open/reveal 交给 NSWorkspace；复制写真实 URL 至剪贴板；拖出通告 copy。构建脚本删除范围仅 build/Clothesline.app 与自身临时图标目录；测试删除范围仅自建临时测试目录。
+## 文件安全与许可
+×、取下、清空、退出仍只改变显示。仅单独的废纸篓命令移动原项目，UI 默认取消并明确说明目录包含其内容；没有永久删除接口。读取最新元数据核对卡片后调用系统 trashItem，不保证核对与系统移动之间绝对不存在外部替换竞争。拖出提供 copy。普通书签适用于当前非沙盒本地版本。
 
-## 限制与待验收
-- 透明浮层 UI 自动化返回空白截图/不可点击元素，无法证明完整可见效果及实际菜单操作。
-- Quick Look、双击打开、Finder 拖拽、UI ×/清空需人工实际验收；模型安全测试已通过。
-- Chrome/Safari 真实下载、权限拒绝/授权、睡眠、多屏、macOS 14 兼容性未验证。
-- 完成检测为启发式；隐藏记录暂不自动清理，长期使用可能增长。
-- 本地 ad-hoc 签名，无公证/DMG/远端 Git；不宣称正式发行完成。
+保留 LICENSE 中 Alejandro Buján 的原作者版权与完整 MIT；应用包包含许可。使用 Clothesline 独立名称与现有独立图标。
+
+## 限制与下一步
+- 透明浮层 UI 自动化曾返回空白截图/不可点击元素；本轮模型/系统操作测试通过，不能替代右键确认弹窗、手动选择目录、鼠标离开保持显示的人工 UI 验收。
+- Quick Look、双击、实际 Finder 拖拽，Chrome/Safari 下载，权限拒绝/重新授权、睡眠、多屏、macOS 14 兼容性仍待验收。
+- 目录稳定仅看目录本身元数据，不递归判断内容写入；完成检测为启发式。
+- 手动目录读不到时不展示，书签保留便于恢复访问；未增加单独的目录权限错误 UI。
+- 隐藏记录尚未自动清理；本地 ad-hoc 签名，无公证/DMG/远端 Git，不打正式版本标签。

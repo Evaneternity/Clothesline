@@ -65,7 +65,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>NSDownloadsFolderUsageDescription</key>
 <string>Clothesline watches the selected Downloads folder to display recently completed local files.</string>
 <key>NSDocumentsFolderUsageDescription</key>
-<string>Clothesline can watch a folder you choose; it does not move or delete files.</string>
+<string>Clothesline can watch or display a folder you choose. Only an explicitly confirmed Trash action moves an item.</string>
 </dict></plist>
 PLIST
 
