@@ -53,9 +53,8 @@ final class Line: ObservableObject {
 
     func adopt(_ files: [DownloadFile]) {
         latest = files
-        // No unbounded buildup of fingerprints for files that no longer exist.
-        let current = Set(files.map(\.fingerprint))
-        dismissed.formIntersection(current)
+        // A completion scan can temporarily be empty at startup or while a
+        // file changes. It is not evidence that dismissed files were deleted.
         updateVisibleItems()
     }
 

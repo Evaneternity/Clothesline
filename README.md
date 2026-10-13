@@ -4,7 +4,7 @@
 
 Inspired by [Tendedero](https://github.com/alejandrobujan/tendedero) by Alejandro Buján, with its light transparent rope, clothespins, spring animations, and auto-hide interaction. Unlike Tendedero's screenshot workflow, Clothesline focuses on actual files in Downloads. Clothesline has its **own name and original icon** and does not claim endorsement by the Tendedero author.
 
-**状态：V0.1 源码原型，非正式发行版。** Swift 下载检测核心测试已通过；尚未在真实 Mac 上构建 / 运行验证 AppKit/SwiftUI 的所有交互。下载前请注意：这是一个源码包，不是已签名可安装的 DMG。
+**状态：V0.1 本地候选版。** 已在 macOS 26.6.2 / Apple Silicon 构建并启动，核心与 macOS 监听、安全测试通过。完整 UI 验收仍待完成，见 PROJECT_STATE.md 和 HANDOFF_LATEST.md。
 
 ## 功能（V0.1）
 
@@ -82,7 +82,7 @@ Clothesline/
 3. **本地访问。** 当前无联网逻辑、无遥测、无账户。监控目录选择及隐藏状态保存在本地 `UserDefaults`。
 4. **单层监控。** V0.1 只扫描监控目录的顶层，不递归子目录；目录不会挂上晾衣绳。
 5. **非破坏性拖出。** V0.1 源仅通告 `.copy`；如果想从 Downloads 移动到其他文件夹，需要使用 Finder 完成移动。未来可以考虑经确认的移动模式。
-6. **可验收，不夸大。** 已在 Linux 编译运行 `DownloadIndex` 的基础测试，已通过 Swift 的语法解析。未在此运行 macOS 特有的 AppKit、SwiftUI、Quick Look、文件授权和多显示器交互测试；这些需要 Mac。
+6. **可验收，不夸大。** 已在 macOS 构建启动并测试真实目录监听、真实 URL 卡片及非破坏性取下。运行应用已识别 Downloads 新文件。浏览器下载、完整 UI 交互、多屏和权限拒绝仍待验收。
 7. **未包含**：开机自启、原生 DMG 分发、Apple 公证、自动更新、高级全屏隐藏策略、完整无障碍 / VoiceOver、中文外其他本地化。这些属于后续版本。
 
 ## 后续 macOS 验收清单
@@ -100,3 +100,7 @@ Clothesline/
 ## 版权与来源
 
 Tendedero 源码由 Alejandro Buján 按 MIT 发布；本项目借鉴并改写其晾衣绳结构、悬浮交互、动画与卡片设计思想。参见 [原项目许可证](https://github.com/alejandrobujan/tendedero/blob/main/LICENSE)。Tendedero 的名称、图标和文档配图不在其 MIT 授权范围内，本项目没有使用。Clothesline 为独立项目；完整许可见 `LICENSE`。
+
+## 持续开发
+
+遵循 AGENTS.md，每轮更新 PROJECT_STATE.md、HANDOFF_LATEST.md、CHANGELOG.md 并提交 Git。运行 scripts/test-core.sh、scripts/test-macos.sh 和 scripts/build-app.sh release。当前 Git 仅本地管理，尚无远端。

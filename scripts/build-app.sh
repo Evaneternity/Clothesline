@@ -3,6 +3,8 @@
 # Usage: scripts/build-app.sh [debug|release]
 set -euo pipefail
 cd "$(dirname "$0")/.."
+export CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-$PWD/.build/ModuleCache}"
+export SWIFT_MODULECACHE_PATH="${SWIFT_MODULECACHE_PATH:-$CLANG_MODULE_CACHE_PATH}"
 CONFIG="${1:-release}"
 if [[ "$CONFIG" != "debug" && "$CONFIG" != "release" ]]; then
   echo "Expected 'debug' or 'release'" >&2; exit 2
@@ -33,6 +35,7 @@ APP="build/Clothesline.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BINDIR/Clothesline" "$APP/Contents/MacOS/Clothesline"
+cp LICENSE "$APP/Contents/Resources/LICENSE"
 
 # Generate an original Clothesline icon from a PNG bundled with this project.
 ICONSET="$(mktemp -d)/Clothesline.iconset"

@@ -4,7 +4,7 @@ import Quartz
 import ServiceManagement
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, QLPreviewPanelController {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let line = Line()
     private var panel: LinePanel!
     private var statusItem: NSStatusItem!
@@ -63,9 +63,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, QLPrev
     private func restoreFolder() -> URL? {
         guard let data = UserDefaults.standard.data(forKey: "folderBookmark") else { return nil }
         var stale = false
-        if let url = try? URL(resolvingBookmarkData: data,
+        if let url = (try? URL(resolvingBookmarkData: data,
                              options: [.withSecurityScope], relativeTo: nil,
-                             bookmarkDataIsStale: &stale) {
+                             bookmarkDataIsStale: &stale)) ?? (try? URL(resolvingBookmarkData: data,
+                             options: [], relativeTo: nil, bookmarkDataIsStale: &stale)) {
             scopedAccess = url.startAccessingSecurityScopedResource()
             return url
         }
@@ -226,11 +227,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, QLPrev
     }
 
     // Quick Look delegates are asked through the application responder chain.
-    func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
-    func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+    override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
+    override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
         QuickLook.shared.take(panel)
     }
-    func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+    override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
         QuickLook.shared.release(panel)
     }
 }
