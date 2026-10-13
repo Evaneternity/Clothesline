@@ -12,9 +12,9 @@ Clothesline（晾衣绳）是一款 macOS 原生文件工具，将最近下载�
 
 下面是约 36 秒的实际使用录屏，展示晾衣绳的文件卡片与彩色夹子。
 
-[![Clothesline 使用演示](docs/demo-preview.png)](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-demo.mp4)
+https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
-**[点击观看 / 下载演示视频（MP4，约 4 MB）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-demo.mp4)**
+**[下载演示视频（MP4，约 4 MB）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-demo.mp4)**
 
 录屏展示的是当前开发版本，彩色夹子尚未包含在 rc.1 DMG 中。
 
