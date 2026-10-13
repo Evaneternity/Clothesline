@@ -60,3 +60,5 @@ DMG 构建脚本 scripts/build-dmg.sh，包含 Clothesline.app、Applications �
 README 图标统一：标题引用 assets/clothesline-icon.png，菜单操作和验收清单采用当前 T 恤图标名称，移除全部篮子 emoji；本轮仅文档改动。
 
 GitHub 同步恢复：README 中文介绍及 T 恤图标修改已成功推送，远端提交 108872d 与本地一致。
+
+本轮视觉更新：夹子按当前卡片位置循环六色，相邻不重色，保留尺寸、弹簧动画、高光与阴影。仅修改 PeggedView / LineView 视觉；现有 GitHub rc.1 DMG 不随源码修改自动更新。

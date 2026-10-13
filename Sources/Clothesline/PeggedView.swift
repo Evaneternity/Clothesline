@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PeggedView: View {
     let item: Pegged
+    let position: Int
     @ObservedObject var line: Line
     @State private var swing: Double = 0
     @State private var arrived = false
@@ -11,7 +12,7 @@ struct PeggedView: View {
 
     var body: some View {
         VStack(spacing: -12) {
-            Clothespin().zIndex(1)
+            Clothespin(position: position).zIndex(1)
             card
         }
         .rotationEffect(.degrees(swing + item.tilt), anchor: .top)
@@ -101,15 +102,27 @@ extension View {
 }
 
 struct Clothespin: View {
-    private let metal = LinearGradient(stops: [
-        .init(color: Color(white: 0.70), location: 0),
-        .init(color: Color(white: 0.93), location: 0.35),
-        .init(color: Color(white: 0.82), location: 0.65),
-        .init(color: Color(white: 0.62), location: 1)
-    ], startPoint: .leading, endPoint: .trailing)
+    let position: Int
+    private static let palette: [Color] = [
+        Color(red: 0.94, green: 0.36, blue: 0.40),
+        Color(red: 0.98, green: 0.67, blue: 0.22),
+        Color(red: 0.32, green: 0.72, blue: 0.49),
+        Color(red: 0.28, green: 0.64, blue: 0.91),
+        Color(red: 0.62, green: 0.46, blue: 0.85),
+        Color(red: 0.92, green: 0.47, blue: 0.68)
+    ]
+    private var tint: Color { Self.palette[position % Self.palette.count] }
+    private var finish: LinearGradient {
+        LinearGradient(stops: [
+            .init(color: tint.opacity(0.82), location: 0),
+            .init(color: tint, location: 0.35),
+            .init(color: tint.opacity(0.92), location: 0.65),
+            .init(color: tint, location: 1)
+        ], startPoint: .leading, endPoint: .trailing)
+    }
     var body: some View {
         RoundedRectangle(cornerRadius: 3.5, style: .continuous)
-            .fill(metal).frame(width: 9, height: 26)
+            .fill(finish).frame(width: 9, height: 26)
             .overlay(RoundedRectangle(cornerRadius: 3.5, style: .continuous)
                 .stroke(LinearGradient(colors: [Color.white.opacity(0.9), Color.black.opacity(0.18)],
                                        startPoint: .top, endPoint: .bottom), lineWidth: 0.6))
