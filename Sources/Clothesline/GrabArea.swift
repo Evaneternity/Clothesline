@@ -19,8 +19,9 @@ struct GrabArea: NSViewRepresentable {
         view.onShareChange = { line.interactionHeld = $0 }
         view.file = item.url
         view.dragImage = item.thumb
+        view.dragText = item.noteText
         view.onClick = { line.quickLook(id) }
-        view.onDoubleClick = { line.open(id) }
+        view.onDoubleClick = { if item.noteText != nil { line.requestEditNote(id) } else { line.open(id) } }
         view.onDismiss = { line.dismiss(id) }
         view.onPressChange = {
             line.pressedID = $0 ? id : nil
@@ -34,12 +35,20 @@ struct GrabArea: NSViewRepresentable {
             let menu = NSMenu()
             menu.addItem(ClosureMenuItem("快速预览") { line.quickLook(id) })
             menu.addItem(ClosureMenuItem("打开文件") { line.open(id) })
-            menu.addItem(ClosureMenuItem("在 Finder 中显示") { line.reveal(id) })
-            menu.addItem(ClosureMenuItem("复制文件") { line.copy(id) })
-            menu.addItem(ClosureMenuItem("重命名…") { line.requestRename(id) })
+            if item.isClipboard {
+                menu.addItem(ClosureMenuItem(item.noteText == nil ? "复制图片" : "复制文字") { line.copy(id) })
+                if item.noteText != nil {
+                    menu.addItem(ClosureMenuItem("查看 / 编辑便签…") { line.requestEditNote(id) })
+                }
+                menu.addItem(ClosureMenuItem("另存为…") { line.saveClipboard(id) })
+            } else {
+                menu.addItem(ClosureMenuItem("在 Finder 中显示") { line.reveal(id) })
+                menu.addItem(ClosureMenuItem("复制文件") { line.copy(id) })
+                menu.addItem(ClosureMenuItem("重命名…") { line.requestRename(id) })
+            }
             menu.addItem(ClosureMenuItem("分享…") { [weak view] in
                 guard let view else { return }
-                let picker = NSSharingServicePicker(items: [item.url])
+                let picker = NSSharingServicePicker(items: item.noteText.map { [$0] } ?? [item.url])
                 view.sharePicker = picker
                 picker.delegate = view
                 view.onShareChange(true)
@@ -47,7 +56,7 @@ struct GrabArea: NSViewRepresentable {
             })
             menu.addItem(.separator())
             menu.addItem(ClosureMenuItem("从晾衣绳取下（保留原文件）") { line.dismiss(id) })
-            menu.addItem(ClosureMenuItem("移到废纸篓…") { line.requestTrash(id) })
+            if !item.isClipboard { menu.addItem(ClosureMenuItem("移到废纸篓…") { line.requestTrash(id) }) }
             return menu
         }
     }
@@ -72,6 +81,7 @@ final class GrabView: NSView, NSDraggingSource, NSSharingServicePickerDelegate {
     var sharePicker: NSSharingServicePicker?
     var file: URL?
     var dragImage: NSImage?
+    var dragText: String?
     var onClick: () -> Void = {}
     var onDoubleClick: () -> Void = {}
     var onDismiss: () -> Void = {}
@@ -104,7 +114,9 @@ final class GrabView: NSView, NSDraggingSource, NSSharingServicePickerDelegate {
         pendingSingleClick?.cancel()
         onDragChange(true)
         onPressChange(false)
-        let dragged = NSDraggingItem(pasteboardWriter: Self.filePasteboardItem(file))
+        let payload = Self.filePasteboardItem(file)
+        if let dragText { payload.setString(dragText, forType: .string) }
+        let dragged = NSDraggingItem(pasteboardWriter: payload)
         // A subtle, system-native drag image (file thumbnail/icon).
         dragged.setDraggingFrame(bounds, contents: dragImage)
         let session = beginDraggingSession(with: [dragged], event: event, source: self)

@@ -9,15 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var panel: LinePanel!
     private var statusItem: NSStatusItem!
     private var monitors: FolderMonitors?
-    private var screenshots: ScreenshotMonitor?
-    private var monitoredFiles: [DownloadFile] = []
-    private var screenshotFiles: [DownloadFile] = []
+    private var clipboard: ClipboardMonitor?
     private let recentDrawer = RecentDrawer()
-    private func refreshFiles() {
-        var unique: [String: DownloadFile] = [:]
-        for file in monitoredFiles + screenshotFiles { unique[file.path] = file }
-        line.adopt(unique.values.sorted { $0.recency > $1.recency })
-    }
     private var hotkey: HotKey?
     private var pointerTimer: Timer?
     private var wakeObserver: NSObjectProtocol?
@@ -52,13 +45,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
 
-        monitors = FolderMonitors { [weak self] in
-            self?.monitoredFiles = $0; self?.refreshFiles()
+        monitors = FolderMonitors { [weak self] in self?.line.adopt($0) }
+        clipboard = ClipboardMonitor { [weak self] content, manual in
+            try self?.line.attachClipboard(content, manual: manual)
         }
-        screenshots = ScreenshotMonitor { [weak self] in
-            self?.screenshotFiles = $0; self?.refreshFiles()
-        }
-        screenshots?.restart()
+        clipboard?.start()
         monitors?.start()
         hotkey = HotKey { [weak self] in self?.togglePinned() }
         pointerTimer = Timer.scheduledTimer(withTimeInterval: 0.10, repeats: true) { [weak self] _ in
@@ -66,13 +57,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.monitors?.wake(); self?.screenshots?.restart() }
+                MainActor.assumeIsolated { self?.monitors?.wake() }
             }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         monitors?.stop()
-        screenshots?.stop()
+        clipboard?.stop()
+        line.clearClipboardStorage()
         pointerTimer?.invalidate()
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
     }
@@ -193,25 +185,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(ClosureMenuItem("最近文件…") { [weak self] in
             guard let self else { return }; self.recentDrawer.show(line: self.line)
         })
-        let screenshotItem = ClosureMenuItem("接入截图文件") { [weak self] in
-            guard let self else { return }; self.screenshots?.setEnabled(!(self.screenshots?.enabled ?? false))
+        let clipboardMenu = NSMenu(title: "剪贴板挂载")
+        let images = ClosureMenuItem("自动挂上图片 / 截图") { [weak self] in
+            guard let self else { return }
+            self.clipboard?.setImagesEnabled(!(self.clipboard?.imagesEnabled ?? false))
         }
-        screenshotItem.state = screenshots?.enabled == true ? .on : .off
-        menu.addItem(screenshotItem)
-        menu.addItem(ClosureMenuItem("选择截图保存文件夹…") { [weak self] in
-            let picker = NSOpenPanel()
-            picker.canChooseFiles = false; picker.canChooseDirectories = true
-            picker.directoryURL = self?.screenshots?.folder
-            picker.message = "选择 macOS 截图保存目录；仅识别截图文件，不修改系统截图设置。"
-            NSApp.activate(ignoringOtherApps: true)
-            guard picker.runModal() == .OK, let url = picker.url else { return }
-            do { try self?.screenshots?.chooseFolder(url) }
-            catch { NSAlert(error: error).runModal() }
+        images.state = clipboard?.imagesEnabled == true ? .on : .off
+        clipboardMenu.addItem(images)
+        let text = ClosureMenuItem("自动挂上文字便签") { [weak self] in
+            guard let self else { return }
+            self.clipboard?.setTextEnabled(!(self.clipboard?.textEnabled ?? false))
+        }
+        text.state = clipboard?.textEnabled == true ? .on : .off
+        clipboardMenu.addItem(text)
+        clipboardMenu.addItem(.separator())
+        clipboardMenu.addItem(ClosureMenuItem("挂上当前剪贴板") { [weak self] in
+            do {
+                if try self?.clipboard?.captureCurrent() != true {
+                    let alert = NSAlert()
+                    alert.messageText = "剪贴板中没有可挂载的图片或文字"
+                    alert.informativeText = "支持图片（32 MB 以内）和文字（200 KB 以内）；文件请从 Finder 拖入。"
+                    alert.runModal()
+                }
+            } catch { NSAlert(error: error).runModal() }
         })
-        if let failure = screenshots?.failure {
-            let errorItem = NSMenuItem(title: "截图监控：\(failure)", action: nil, keyEquivalent: "")
-            errorItem.isEnabled = false; menu.addItem(errorItem)
+        clipboardMenu.addItem(ClosureMenuItem("清空剪贴板挂载内容") { [weak self] in
+            self?.line.clearClipboardStorage()
+        })
+        let clipboardHint = NSMenuItem(title: "仅本机、会话内保存；文字可能含敏感信息", action: nil, keyEquivalent: "")
+        clipboardHint.isEnabled = false
+        clipboardMenu.addItem(clipboardHint)
+        if let failure = clipboard?.failure {
+            let errorItem = NSMenuItem(title: "⚠ \(failure)", action: nil, keyEquivalent: "")
+            errorItem.isEnabled = false; clipboardMenu.addItem(errorItem)
         }
+        let clipboardItem = NSMenuItem(title: "剪贴板挂载", action: nil, keyEquivalent: "")
+        clipboardItem.submenu = clipboardMenu
+        menu.addItem(clipboardItem)
         menu.addItem(ClosureMenuItem("打开下载文件夹") {
             NSWorkspace.shared.open(FolderMonitors.downloads)
         })

@@ -31,6 +31,12 @@ struct PeggedView: View {
 
     private var card: some View {
         VStack(spacing: 4) {
+            if let text = item.noteText {
+                Text(text).font(.system(size: 12)).lineLimit(6)
+                    .frame(width: Layout.cardWidth - 24, height: Layout.photoMaxHeight - 14, alignment: .topLeading)
+                    .padding(4).background(Color.yellow.opacity(0.16), in: RoundedRectangle(cornerRadius: 6))
+                    .allowsHitTesting(false)
+            } else {
             Image(nsImage: item.thumb)
                 .resizable().interpolation(.high)
                 .scaledToFit()
@@ -45,7 +51,8 @@ struct PeggedView: View {
                             .allowsHitTesting(false)
                     }
                 }
-            Text(item.url.lastPathComponent)
+            }
+            Text(item.noteText == nil ? item.url.lastPathComponent : "文字便签")
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -73,7 +80,7 @@ struct PeggedView: View {
         .overlay(GrabArea(item: item, line: line))
         .overlay(alignment: .bottom) {
             if line.copiedID == item.id {
-                Label("已复制文件", systemImage: "checkmark")
+                Label(item.noteText == nil ? "已复制" : "已复制文字", systemImage: "checkmark")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 10).padding(.vertical, 5)

@@ -9,12 +9,14 @@ struct Pegged: Identifiable, Equatable {
     let tilt: Double
     var falling = false
     var flying = false
+    var noteText: String?
+    var isClipboard = false
     var url: URL { file.url }
     var isRecording: Bool {
         ["mov", "mp4", "m4v", "avi", "webm", "mkv"].contains(url.pathExtension.lowercased())
     }
     static func == (lhs: Pegged, rhs: Pegged) -> Bool {
-        lhs.id == rhs.id && lhs.thumb === rhs.thumb && lhs.falling == rhs.falling
+        lhs.id == rhs.id && lhs.thumb === rhs.thumb && lhs.falling == rhs.falling && lhs.noteText == rhs.noteText
     }
 }
 
@@ -34,6 +36,12 @@ final class Line: ObservableObject {
     let drawerButtonID = UUID()
     var showRecent: () -> Void = {}
 
+    private struct ClipboardEntry {
+        var content: ClipboardContent
+        let url: URL
+    }
+    private var clipboardEntries: [ClipboardEntry] = []
+    private var clipboardDirectory: URL?
     private var latest: [DownloadFile] = []
     @Published private(set) var recent: [DownloadFile] = []
     var interactionHeld = false
@@ -79,8 +87,10 @@ final class Line: ObservableObject {
         guard pressedID == nil, draggingID == nil else { return }
         let attached = attachedFolders.compactMap { try? DownloadIndex.read($0) }
         let attachedPaths = Set(attached.map(\.path))
-        let combined = attached + latest.filter { !attachedPaths.contains($0.path) }
-        remember(combined)
+        let originalFiles = attached + latest.filter { !attachedPaths.contains($0.path) }
+        remember(originalFiles)
+        let clipboardFiles = clipboardEntries.compactMap { try? DownloadIndex.read($0.url) }
+        let combined = clipboardFiles + originalFiles
         let selected = Array(combined.filter { !dismissed.contains($0.fingerprint) }.prefix(maxItems).reversed())
         let previous = Dictionary(uniqueKeysWithValues: items.map { ($0.file.fingerprint, $0) })
         var newItems: [Pegged] = []
@@ -90,8 +100,10 @@ final class Line: ObservableObject {
             } else {
                 let image = NSWorkspace.shared.icon(forFile: file.path)
                 image.size = NSSize(width: 120, height: 120)
+                let entry = clipboardEntries.first { $0.url.path == file.path }
+                let note: String? = entry.flatMap { if case .text(let text) = $0.content { return text }; return nil }
                 let item = Pegged(id: UUID(), file: file, thumb: image,
-                                  tilt: Double.random(in: -2.5...2.5))
+                                  tilt: Double.random(in: -2.5...2.5), noteText: note, isClipboard: entry != nil)
                 newItems.append(item)
                 requestThumbnail(for: item)
             }
@@ -100,8 +112,89 @@ final class Line: ObservableObject {
         if items != newItems { items = newItems }
     }
 
+    /// Clipboard payloads are owned session files, excluded from persistent history/bookmarks.
+    func attachClipboard(_ content: ClipboardContent, manual: Bool = false) throws {
+        if let existing = clipboardEntries.first(where: { $0.content.identity == content.identity }) {
+            if manual, let file = try DownloadIndex.read(existing.url) {
+                dismissed.remove(file.fingerprint)
+                UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
+                updateVisibleItems(); revealed = true
+            }
+            return
+        }
+        guard clipboardEntries.count < 100 else {
+            throw NSError(domain: "Clothesline", code: 7, userInfo: [NSLocalizedDescriptionKey: "本次会话已挂载 100 条剪贴板内容，请清空剪贴板挂载内容后重试。"])
+        }
+        if clipboardDirectory == nil {
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Clothesline-Clipboard-" + UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false,
+                                                  attributes: [.posixPermissions: 0o700])
+            clipboardDirectory = folder
+        }
+        guard let folder = clipboardDirectory else { return }
+        let url = folder.appendingPathComponent((content.isText ? "便签-" : "剪贴板图片-") + UUID().uuidString)
+            .appendingPathExtension(content.isText ? "txt" : "png")
+        try content.data.write(to: url, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        clipboardEntries.insert(ClipboardEntry(content: content, url: url), at: 0)
+        updateVisibleItems(); revealed = true
+    }
+
+    func clearClipboardStorage() {
+        guard pressedID == nil, draggingID == nil else { return }
+        if let folder = clipboardDirectory {
+            dismissed = dismissed.filter { !$0.hasPrefix(folder.path + "/") }
+            try? FileManager.default.removeItem(at: folder)
+            UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
+        }
+        clipboardEntries.removeAll(); clipboardDirectory = nil
+        updateVisibleItems()
+    }
+
+    func requestEditNote(_ id: UUID) {
+        guard let item = items.first(where: { $0.id == id }), let text = item.noteText else { return }
+        interactionHeld = true
+        defer { interactionHeld = false }
+        let alert = NSAlert()
+        alert.messageText = "文字便签"
+        let editor = NSTextView(frame: NSRect(x: 0, y: 0, width: 360, height: 220))
+        editor.isRichText = false; editor.string = text
+        let scroll = NSScrollView(frame: editor.frame)
+        scroll.hasVerticalScroller = true; scroll.documentView = editor
+        alert.accessoryView = scroll
+        alert.addButton(withTitle: "保存"); alert.addButton(withTitle: "取消")
+        alert.window.initialFirstResponder = editor
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do { try editNote(id, text: editor.string) }
+        catch { NSAlert(error: error).runModal() }
+    }
+
+    func editNote(_ id: UUID, text: String) throws {
+        guard let item = items.first(where: { $0.id == id }), item.noteText != nil,
+              let index = clipboardEntries.firstIndex(where: { $0.url == item.url }) else { return }
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.utf8.count <= 200_000 else {
+            throw NSError(domain: "Clothesline", code: 6, userInfo: [NSLocalizedDescriptionKey: "便签不能为空，且需在 200 KB 以内。"])
+        }
+        try Data(text.utf8).write(to: item.url, options: .atomic)
+        clipboardEntries[index].content = .text(text)
+        updateVisibleItems()
+    }
+
+    func saveClipboard(_ id: UUID) {
+        guard let item = items.first(where: { $0.id == id }), item.isClipboard else { return }
+        interactionHeld = true
+        defer { interactionHeld = false }
+        let picker = NSSavePanel()
+        picker.nameFieldStringValue = item.noteText != nil ? "便签.txt" : "剪贴板图片.png"
+        NSApp.activate(ignoringOtherApps: true)
+        guard picker.runModal() == .OK, let destination = picker.url else { return }
+        do { try Data(contentsOf: item.url).write(to: destination, options: .atomic) }
+        catch { NSAlert(error: error).runModal() }
+    }
+
     private func requestThumbnail(for item: Pegged) {
-        guard !item.file.isDirectory else { return }
+        guard !item.file.isDirectory, item.noteText == nil else { return }
         let request = QLThumbnailGenerator.Request(fileAt: item.url,
             size: CGSize(width: 240, height: 220), scale: 2,
             representationTypes: [.thumbnail, .lowQualityThumbnail])
@@ -172,7 +265,7 @@ final class Line: ObservableObject {
     }
 
     func rename(_ id: UUID, stem: String) throws {
-        guard let item = items.first(where: { $0.id == id }),
+        guard let item = items.first(where: { $0.id == id }), !item.isClipboard,
               let fresh = try DownloadIndex.read(item.url), fresh.fingerprint == item.file.fingerprint else {
             throw NSError(domain: "Clothesline", code: 3, userInfo: [NSLocalizedDescriptionKey: "文件已改变或不存在，请刷新后重试。"])
         }
@@ -224,7 +317,7 @@ final class Line: ObservableObject {
     /// The explicit delete command uses Trash. Taking down a card never calls this.
     @discardableResult
     func moveToTrash(_ id: UUID) throws -> URL {
-        guard let item = items.first(where: { $0.id == id }),
+        guard let item = items.first(where: { $0.id == id }), !item.isClipboard,
               let current = try DownloadIndex.read(item.url),
               current.fingerprint == item.file.fingerprint else {
             throw NSError(domain: "Clothesline", code: 2,
@@ -271,7 +364,10 @@ final class Line: ObservableObject {
         guard let item = items.first(where: { $0.id == id }) else { return }
         let pb = NSPasteboard.general
         pb.clearContents()
-        pb.writeObjects([item.url as NSURL])
+        if let text = item.noteText { pb.setString(text, forType: .string) }
+        else if item.isClipboard, let data = try? Data(contentsOf: item.url) { pb.setData(data, forType: .png) }
+        else { pb.writeObjects([item.url as NSURL]) }
+        ClipboardMonitor.markOwned(pb)
         copiedID = id
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) { [weak self] in
             if self?.copiedID == id { self?.copiedID = nil }

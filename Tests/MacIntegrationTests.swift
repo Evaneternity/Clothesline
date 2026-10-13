@@ -180,19 +180,73 @@ struct MacIntegrationTests {
         precondition(staging.recentFiles(matching: "renamed-document").count == 1, "drawer retains hidden files")
         try staging.attachFiles([renamed])
         precondition(staging.items.contains { $0.url == renamed }, "drawer can rehang hidden file")
-        let screenshotURL = folder.appendingPathComponent("Screenshot test.png")
-        try bytes.write(to: screenshotURL)
-        let screenshot = try DownloadIndex.read(screenshotURL)!
-        precondition(ScreenshotMonitor.isScreenshot(screenshot), "screenshot naming fallback")
-        let ordinaryFile = try DownloadIndex.read(manualA)!
-        precondition(!ScreenshotMonitor.isScreenshot(ordinaryFile), "ordinary file excluded")
-        let screenMonitor = ScreenshotMonitor(defaults: isolatedDefaults) { _ in }
-        precondition(!screenMonitor.enabled, "screenshots opt in")
-        try screenMonitor.chooseFolder(folder)
-        precondition(screenMonitor.enabled && screenMonitor.folder.resolvingSymlinksInPath().path == folder.resolvingSymlinksInPath().path, "screenshot preference retained")
-        screenMonitor.setEnabled(false)
-        precondition(!ScreenshotMonitor(defaults: isolatedDefaults) { _ in }.enabled, "screenshot switch persists")
-        print("PASS: attach multiple files, persistent references, rename collision/extension, recent search/rehang, screenshot opt-in")
+        let clipboardBoard = NSPasteboard.withUniqueName()
+        let clipboardLine = Line()
+        defer { clipboardLine.clearClipboardStorage(); clipboardBoard.releaseGlobally() }
+        var captures = 0
+        let intake = ClipboardMonitor(pasteboard: clipboardBoard, defaults: isolatedDefaults) { content, manual in
+            captures += 1
+            try clipboardLine.attachClipboard(content, manual: manual)
+        }
+        precondition(!intake.imagesEnabled && !intake.textEnabled, "clipboard opt in independently")
+        clipboardBoard.clearContents(); clipboardBoard.setString("acceptance note", forType: .string)
+        intake.poll()
+        precondition(captures == 0, "disabled monitor never captures")
+        intake.setTextEnabled(true); intake.poll()
+        precondition(captures == 0, "enabling does not capture old clipboard")
+        clipboardBoard.clearContents(); clipboardBoard.setString("acceptance note", forType: .string)
+        intake.poll()
+        let note = clipboardLine.items.first { $0.noteText == "acceptance note" }!
+        precondition(captures == 1 && note.isClipboard, "new text becomes note")
+        clipboardBoard.clearContents(); clipboardBoard.setString("acceptance note", forType: .string)
+        intake.poll()
+        precondition(clipboardLine.items.filter { $0.noteText == "acceptance note" }.count == 1, "duplicate note not hung twice")
+        clipboardLine.dismiss(note.id)
+        clipboardBoard.clearContents(); clipboardBoard.setString("acceptance note", forType: .string)
+        intake.poll()
+        precondition(!clipboardLine.items.contains { $0.noteText == "acceptance note" }, "duplicate does not resurrect removed note")
+        let manuallyCaptured = try intake.captureCurrent()
+        precondition(manuallyCaptured && clipboardLine.items.contains { $0.noteText == "acceptance note" }, "manual rehang")
+        let editable = clipboardLine.items.first { $0.noteText == "acceptance note" }!
+        try clipboardLine.editNote(editable.id, text: "edited note")
+        precondition(clipboardLine.items.contains { $0.noteText == "edited note" }, "editable note")
+        let ownedURL = clipboardLine.items.first { $0.noteText == "edited note" }!.url
+        precondition(clipboardLine.recent.allSatisfy { $0.url != ownedURL }, "notes excluded from persistent recent files")
+        let beforeOwnedCopy = captures
+        clipboardBoard.clearContents(); clipboardBoard.setString("own copy", forType: .string)
+        ClipboardMonitor.markOwned(clipboardBoard); intake.poll()
+        precondition(captures == beforeOwnedCopy, "own copy ignored")
+        intake.setTextEnabled(false)
+        clipboardBoard.clearContents(); clipboardBoard.setString("manual-only note", forType: .string)
+        intake.poll()
+        let manualWithBothOff = try intake.captureCurrent()
+        precondition(manualWithBothOff, "manual capture works when both switches off")
+        let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        bitmap.setColor(.red, atX: 0, y: 0)
+        let imageData = bitmap.representation(using: .png, properties: [:])!
+        intake.setImagesEnabled(true)
+        clipboardBoard.clearContents(); clipboardBoard.setData(imageData, forType: .png)
+        clipboardBoard.setString("image alt text", forType: .string)
+        intake.poll()
+        let imageCard = clipboardLine.items.first { $0.isClipboard && $0.noteText == nil }!
+        precondition(imageCard.url.pathExtension == "png", "clipboard image creates image card")
+        clipboardBoard.clearContents(); clipboardBoard.setData(imageData, forType: .png); intake.poll()
+        precondition(clipboardLine.items.filter { $0.isClipboard && $0.noteText == nil }.count == 1, "image deduplication")
+        intake.setImagesEnabled(false); intake.setTextEnabled(true)
+        let beforeImageOff = captures
+        clipboardBoard.clearContents(); clipboardBoard.setData(imageData, forType: .png)
+        clipboardBoard.setString("image alt text", forType: .string); intake.poll()
+        precondition(captures == beforeImageOff, "image alternatives do not become notes")
+        clipboardBoard.clearContents(); clipboardBoard.writeObjects([manualA as NSURL]); intake.poll()
+        precondition(captures == beforeImageOff, "Finder file paths not treated as notes")
+        let restoredIntake = ClipboardMonitor(pasteboard: clipboardBoard, defaults: isolatedDefaults) { _, _ in }
+        precondition(!restoredIntake.imagesEnabled && restoredIntake.textEnabled, "independent preferences persist")
+        clipboardLine.clearClipboardStorage()
+        let sourceBytes = try Data(contentsOf: manualA)
+        precondition(!FileManager.default.fileExists(atPath: ownedURL.path) && sourceBytes == bytes, "only owned clipboard session files cleaned")
+        print("PASS: clipboard opt-in, manual capture, note/image deduplication, own-copy suppression, editing, source safety")
         print("PASS: macOS live watcher, temporary rename, actual rope URL, dismissal/restart/clear and source bytes, copy-only drag, attached folders, recoverable file/folder trash, stale deletion rejection, display persistence")
     }
 }
