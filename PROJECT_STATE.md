@@ -58,3 +58,5 @@ DMG 构建脚本 scripts/build-dmg.sh，包含 Clothesline.app、Applications �
 本轮文档更新：README 开头改为简洁中文应用介绍，移除重复的灵感段落；“版权与来源”和 LICENSE 保留。未修改 logo 或应用功能。
 
 README 图标统一：标题引用 assets/clothesline-icon.png，菜单操作和验收清单采用当前 T 恤图标名称，移除全部篮子 emoji；本轮仅文档改动。
+
+GitHub 同步恢复：README 中文介绍及 T 恤图标修改已成功推送，远端提交 108872d 与本地一致。
