@@ -6,7 +6,7 @@ struct MacIntegrationTests {
     @MainActor static func main() throws {
         _ = NSApplication.shared
         let defaults = UserDefaults.standard
-        let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine"]
+        let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine", "recentFileBookmarks"]
         let saved = keys.map { defaults.object(forKey: $0) }
         for key in keys { defaults.removeObject(forKey: key) }
         defer {
@@ -148,6 +148,51 @@ struct MacIntegrationTests {
         restarted.stop()
         let drag = GrabView()
         precondition(drag.draggingSession(NSDraggingSession(), sourceOperationMaskFor: .outsideApplication) == .copy)
+        // New features use only files in the temporary acceptance directory.
+        let manualA = folder.appendingPathComponent("manual-one.txt")
+        let manualB = folder.appendingPathComponent("manual-two.pdf")
+        try bytes.write(to: manualA); try bytes.write(to: manualB)
+        let staging = Line()
+        try staging.attachFiles([manualA, manualB, manualA])
+        precondition(staging.items.filter { $0.url == manualA }.count == 1, "attach deduplicates files")
+        let afterRestart = Line(); afterRestart.adopt([])
+        precondition(afterRestart.items.contains { $0.url.resolvingSymlinksInPath().path == manualB.resolvingSymlinksInPath().path }, "manual files persist")
+        let pasteboard = NSPasteboard.withUniqueName()
+        pasteboard.writeObjects([manualA as NSURL, manualB as NSURL])
+        precondition(FileDropView.urls(from: pasteboard).count == 2, "Finder multi-file payload")
+        let renameID = staging.items.first { $0.url == manualB }!.id
+        try staging.rename(renameID, stem: "manual-one")
+        let pdfURL = staging.items.first { $0.url.pathExtension == "pdf" }!.url
+        let collision = folder.appendingPathComponent("occupied.pdf")
+        try bytes.write(to: collision)
+        let pdfID = staging.items.first { $0.url == pdfURL }!.id
+        var rejected = false
+        do { try staging.rename(pdfID, stem: "occupied") } catch { rejected = true }
+        precondition(rejected, "rename refuses same-extension conflict")
+        try staging.rename(pdfID, stem: "renamed-document")
+        let renamed = folder.appendingPathComponent("renamed-document.pdf")
+        precondition(FileManager.default.fileExists(atPath: renamed.path), "extension retained")
+        let renamedBytes = try Data(contentsOf: renamed)
+        precondition(renamedBytes == bytes, "rename preserves bytes")
+        precondition(staging.recentFiles(matching: "RENAMED-DOCUMENT").count == 1, "case insensitive recent search")
+        let renamedCard = staging.items.first { $0.url == renamed }!
+        staging.dismiss(renamedCard.id)
+        precondition(staging.recentFiles(matching: "renamed-document").count == 1, "drawer retains hidden files")
+        try staging.attachFiles([renamed])
+        precondition(staging.items.contains { $0.url == renamed }, "drawer can rehang hidden file")
+        let screenshotURL = folder.appendingPathComponent("Screenshot test.png")
+        try bytes.write(to: screenshotURL)
+        let screenshot = try DownloadIndex.read(screenshotURL)!
+        precondition(ScreenshotMonitor.isScreenshot(screenshot), "screenshot naming fallback")
+        let ordinaryFile = try DownloadIndex.read(manualA)!
+        precondition(!ScreenshotMonitor.isScreenshot(ordinaryFile), "ordinary file excluded")
+        let screenMonitor = ScreenshotMonitor(defaults: isolatedDefaults) { _ in }
+        precondition(!screenMonitor.enabled, "screenshots opt in")
+        try screenMonitor.chooseFolder(folder)
+        precondition(screenMonitor.enabled && screenMonitor.folder.resolvingSymlinksInPath().path == folder.resolvingSymlinksInPath().path, "screenshot preference retained")
+        screenMonitor.setEnabled(false)
+        precondition(!ScreenshotMonitor(defaults: isolatedDefaults) { _ in }.enabled, "screenshot switch persists")
+        print("PASS: attach multiple files, persistent references, rename collision/extension, recent search/rehang, screenshot opt-in")
         print("PASS: macOS live watcher, temporary rename, actual rope URL, dismissal/restart/clear and source bytes, copy-only drag, attached folders, recoverable file/folder trash, stale deletion rejection, display persistence")
     }
 }

@@ -16,6 +16,7 @@ struct GrabArea: NSViewRepresentable {
 
     private func configure(_ view: GrabView) {
         let id = item.id
+        view.onShareChange = { line.interactionHeld = $0 }
         view.file = item.url
         view.dragImage = item.thumb
         view.onClick = { line.quickLook(id) }
@@ -35,6 +36,15 @@ struct GrabArea: NSViewRepresentable {
             menu.addItem(ClosureMenuItem("打开文件") { line.open(id) })
             menu.addItem(ClosureMenuItem("在 Finder 中显示") { line.reveal(id) })
             menu.addItem(ClosureMenuItem("复制文件") { line.copy(id) })
+            menu.addItem(ClosureMenuItem("重命名…") { line.requestRename(id) })
+            menu.addItem(ClosureMenuItem("分享…") { [weak view] in
+                guard let view else { return }
+                let picker = NSSharingServicePicker(items: [item.url])
+                view.sharePicker = picker
+                picker.delegate = view
+                view.onShareChange(true)
+                picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+            })
             menu.addItem(.separator())
             menu.addItem(ClosureMenuItem("从晾衣绳取下（保留原文件）") { line.dismiss(id) })
             menu.addItem(ClosureMenuItem("移到废纸篓…") { line.requestTrash(id) })
@@ -43,7 +53,7 @@ struct GrabArea: NSViewRepresentable {
     }
 }
 
-final class GrabView: NSView, NSDraggingSource {
+final class GrabView: NSView, NSDraggingSource, NSSharingServicePickerDelegate {
     static let filenamesType = NSPasteboard.PasteboardType("NSFilenamesPboardType")
 
     static func filePasteboardItem(_ url: URL) -> NSPasteboardItem {
@@ -54,6 +64,12 @@ final class GrabView: NSView, NSDraggingSource {
         item.setPropertyList([file.path], forType: filenamesType)
         return item
     }
+    var onShareChange: (Bool) -> Void = { _ in }
+    func sharingServicePicker(_ sharingServicePicker: NSSharingServicePicker, didChoose service: NSSharingService?) {
+        onShareChange(false)
+        sharePicker = nil
+    }
+    var sharePicker: NSSharingServicePicker?
     var file: URL?
     var dragImage: NSImage?
     var onClick: () -> Void = {}

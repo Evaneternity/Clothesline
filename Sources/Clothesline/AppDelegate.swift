@@ -9,6 +9,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var panel: LinePanel!
     private var statusItem: NSStatusItem!
     private var monitors: FolderMonitors?
+    private var screenshots: ScreenshotMonitor?
+    private var monitoredFiles: [DownloadFile] = []
+    private var screenshotFiles: [DownloadFile] = []
+    private let recentDrawer = RecentDrawer()
+    private func refreshFiles() {
+        var unique: [String: DownloadFile] = [:]
+        for file in monitoredFiles + screenshotFiles { unique[file.path] = file }
+        line.adopt(unique.values.sorted { $0.recency > $1.recency })
+    }
     private var hotkey: HotKey?
     private var pointerTimer: Timer?
     private var wakeObserver: NSObjectProtocol?
@@ -17,7 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var currentScreen: NSScreen?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        panel = LinePanel(content: NSHostingView(rootView: LineView(line: line)))
+        panel = LinePanel(content: FileDropView(line: line))
+        line.showRecent = { [weak self] in
+            guard let self else { return }; self.recentDrawer.show(line: self.line)
+        }
         panel.placeOnScreen()
         panel.onScroll = { [weak self] event in
             self?.line.scroll(by: event.scrollingDeltaY + event.scrollingDeltaX)
@@ -40,7 +52,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
 
-        monitors = FolderMonitors { [weak self] in self?.line.adopt($0) }
+        monitors = FolderMonitors { [weak self] in
+            self?.monitoredFiles = $0; self?.refreshFiles()
+        }
+        screenshots = ScreenshotMonitor { [weak self] in
+            self?.screenshotFiles = $0; self?.refreshFiles()
+        }
+        screenshots?.restart()
         monitors?.start()
         hotkey = HotKey { [weak self] in self?.togglePinned() }
         pointerTimer = Timer.scheduledTimer(withTimeInterval: 0.10, repeats: true) { [weak self] _ in
@@ -48,12 +66,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.monitors?.wake() }
+                MainActor.assumeIsolated { self?.monitors?.wake(); self?.screenshots?.restart() }
             }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         monitors?.stop()
+        screenshots?.stop()
         pointerTimer?.invalidate()
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
     }
@@ -86,7 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // AppKit owns mouse tracking from mouseDown through the drag session.
         // Do not turn the source window click-through, hide/reposition it, or
         // move it to another screen while that tracking is in progress.
-        if line.pressedID != nil || line.draggingID != nil {
+        if line.pressedID != nil || line.draggingID != nil || line.interactionHeld {
             lastInside = Date()
             panel.ignoresMouseEvents = false
             return
@@ -112,7 +131,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         let shouldReveal = (pinned || Date().timeIntervalSince(lastInside) < 0.75)
         if shouldReveal != line.revealed { line.revealed = shouldReveal }
-        panel.ignoresMouseEvents = !shouldReveal || !overCard
+        // During an external mouse drag, expose the full rope as a drop target.
+        let externalDrag = NSEvent.pressedMouseButtons & 1 != 0 && line.draggingID == nil
+        panel.ignoresMouseEvents = !shouldReveal || (!overCard && !externalDrag)
     }
 
     func setAlwaysVisible(_ enabled: Bool) {
@@ -131,11 +152,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func attachFolder() {
         let picker = NSOpenPanel()
-        picker.canChooseFiles = false
+        picker.canChooseFiles = true
         picker.canChooseDirectories = true
         picker.allowsMultipleSelection = true
         picker.prompt = "挂上晾衣绳"
-        picker.message = "挂上文件夹快捷入口，保留在原位置。Downloads 监听仍然继续。"
+        picker.message = "挂上文件或文件夹快捷入口，保留在原位置。Downloads 监听仍然继续。"
         NSApp.activate(ignoringOtherApps: true)
         guard picker.runModal() == .OK else { return }
         for url in picker.urls {
@@ -168,7 +189,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let autoHide = ClosureMenuItem("自动隐藏晾衣绳") { [weak self] in self?.setAlwaysVisible(false) }
         autoHide.state = pinned ? .off : .on
         menu.addItem(autoHide)
-        menu.addItem(ClosureMenuItem("挂上文件夹…") { [weak self] in self?.attachFolder() })
+        menu.addItem(ClosureMenuItem("挂上文件或文件夹…") { [weak self] in self?.attachFolder() })
+        menu.addItem(ClosureMenuItem("最近文件…") { [weak self] in
+            guard let self else { return }; self.recentDrawer.show(line: self.line)
+        })
+        let screenshotItem = ClosureMenuItem("接入截图文件") { [weak self] in
+            guard let self else { return }; self.screenshots?.setEnabled(!(self.screenshots?.enabled ?? false))
+        }
+        screenshotItem.state = screenshots?.enabled == true ? .on : .off
+        menu.addItem(screenshotItem)
+        menu.addItem(ClosureMenuItem("选择截图保存文件夹…") { [weak self] in
+            let picker = NSOpenPanel()
+            picker.canChooseFiles = false; picker.canChooseDirectories = true
+            picker.directoryURL = self?.screenshots?.folder
+            picker.message = "选择 macOS 截图保存目录；仅识别截图文件，不修改系统截图设置。"
+            NSApp.activate(ignoringOtherApps: true)
+            guard picker.runModal() == .OK, let url = picker.url else { return }
+            do { try self?.screenshots?.chooseFolder(url) }
+            catch { NSAlert(error: error).runModal() }
+        })
+        if let failure = screenshots?.failure {
+            let errorItem = NSMenuItem(title: "截图监控：\(failure)", action: nil, keyEquivalent: "")
+            errorItem.isEnabled = false; menu.addItem(errorItem)
+        }
         menu.addItem(ClosureMenuItem("打开下载文件夹") {
             NSWorkspace.shared.open(FolderMonitors.downloads)
         })

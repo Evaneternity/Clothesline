@@ -1,9 +1,9 @@
-# 最新交接：rc.2 安装包与英文介绍
+# 最新交接：五项文件工作流
 
-2026-10-13（Asia/Shanghai）。用户授权更新安装包到当前源码并增加英文介绍。
+2026-10-13。用户要求 Finder 文件拖入、快速改名、可选截图接入、最近文件搜索抽屉和系统分享。
 
-构建脚本发行文件名更新为 0.1.0-rc.2，CFBundleVersion 增为 2。包含当前彩色夹子；未新增应用功能。新增 README.en.md，中英文首页互链，下载入口更新至 rc.2，演示附件继续内嵌，MP4 下载仍使用 rc.1 附件。
+FileDropView 接收 Finder 实际 file URLs，复用 Line 普通书签挂载文件和目录。Line 支持扩展名保留重命名及最多 200 个近期书签；RecentDrawer 提供搜索/挂上/拖出。ScreenshotMonitor 默认关闭，读取系统保存目录或保存用户选择，过滤截图 metadata 和常见命名。GrabArea 添加改名和系统分享，交互期间保持源浮层。应用仍中文。
 
-验证：scripts/test-macos.sh、scripts/build-dmg.sh（含核心测试及 Release 构建）通过；hdiutil verify、只读挂载、codesign --verify --strict、版本与许可一致性、Applications 链接检查通过。SHA-256 见 PROJECT_STATE.md。已有旧式拖拽系统诊断未阻止测试通过；完整 UI 与跨应用拖拽仍需人工验收。
+测试仅操作自建临时文件：多文件拖入数据、去重、重启书签恢复、同名冲突、扩展名和字节保留、搜索/取下后重新挂上、截图过滤与开关持久化；结合既有监听/废纸篓/拖拽回归。书签恢复可能将 /var 规范为 /private/var，测试按解析后的真实路径验证。原有 legacy pasteboard/CoreDrag 诊断仍存在。
 
-发布 v0.1.0-rc.2 预发行 DMG 和 SHA-256，保留 rc.1；仍 Apple Silicon、ad-hoc 签名且未公证。英文文档不代表应用 UI 已英文翻译。每次修改继续更新双语介绍并同步 GitHub。
+完整 Finder 鼠标拖入、重命名弹窗、抽屉交互、实际 AirDrop/邮件分享尚待人工验收，模型测试不能替代。新增功能仅本地构建与源码，rc.2 发行资产保持原版本。后续发布需重建新候选包。保持双语 README 与状态同步。

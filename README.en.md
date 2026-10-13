@@ -28,6 +28,16 @@ The candidate uses ad-hoc signing and has not been signed with Developer ID or n
 
 The application interface currently uses Chinese. This English page translates the documentation, not the application interface.
 
+## New workflows (development source)
+
+- Drag one or multiple Finder files/folders onto the revealed clothesline. Only references are stored; originals stay in place. A file picker is also available.
+- Right-click a card → Rename to change the original name while retaining its extension. Conflicts and stale files are rejected without overwriting.
+- Optional screenshot intake is off by default. Enable it from the menu or select your screenshot folder. It reads the system destination (Desktop by default) without changing screenshot settings; system metadata and common screenshot names are recognized.
+- Open Recent Files from the rope or menu to search up to 200 persistent recent file references, drag them out, or hang them again. Missing/inaccessible originals are omitted.
+- Right-click → Share opens the macOS share picker. Available services depend on your system and installed apps.
+
+These additions are in source and the local build; the rc.2 DMG remains the preceding candidate. End-to-end mouse interaction and actual sharing require manual acceptance.
+
 ## Features
 
 - Watch Downloads and multiple additional folders simultaneously. Added folders persist across restarts; the menu lists each folder and any access errors.

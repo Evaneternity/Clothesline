@@ -31,8 +31,12 @@ final class Line: ObservableObject {
     var maxItems = 8
     var visibleCount = 8
     var hitRects: [UUID: CGRect] = [:]
+    let drawerButtonID = UUID()
+    var showRecent: () -> Void = {}
 
     private var latest: [DownloadFile] = []
+    @Published private(set) var recent: [DownloadFile] = []
+    var interactionHeld = false
     private var attachedFolders: [URL] = []
     private static let foldersKey = "attachedFolderBookmarks"
     private var dismissed: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "dismissedFiles") ?? [])
@@ -51,6 +55,11 @@ final class Line: ObservableObject {
             var stale = false
             return try? URL(resolvingBookmarkData: $0, options: [], relativeTo: nil, bookmarkDataIsStale: &stale)
         }
+        recent = (UserDefaults.standard.array(forKey: "recentFileBookmarks") as? [Data] ?? []).compactMap {
+            var stale = false
+            guard let url = try? URL(resolvingBookmarkData: $0, options: [], relativeTo: nil, bookmarkDataIsStale: &stale) else { return nil }
+            return try? DownloadIndex.read(url)
+        }
         // Gentle periodic gusts without keeping the CPU busy for animation.
         Timer.scheduledTimer(withTimeInterval: 16, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.gust &+= 1 }
@@ -59,6 +68,7 @@ final class Line: ObservableObject {
 
     func adopt(_ files: [DownloadFile]) {
         latest = files
+        remember(files)
         // A completion scan can temporarily be empty at startup or while a
         // file changes. It is not evidence that dismissed files were deleted.
         updateVisibleItems()
@@ -70,6 +80,7 @@ final class Line: ObservableObject {
         let attached = attachedFolders.compactMap { try? DownloadIndex.read($0) }
         let attachedPaths = Set(attached.map(\.path))
         let combined = attached + latest.filter { !attachedPaths.contains($0.path) }
+        remember(combined)
         let selected = Array(combined.filter { !dismissed.contains($0.fingerprint) }.prefix(maxItems).reversed())
         let previous = Dictionary(uniqueKeysWithValues: items.map { ($0.file.fingerprint, $0) })
         var newItems: [Pegged] = []
@@ -123,9 +134,9 @@ final class Line: ObservableObject {
     }
 
     func attachFolder(_ url: URL) throws {
-        guard let file = try DownloadIndex.read(url), file.isDirectory else {
+        guard let file = try DownloadIndex.read(url) else {
             throw NSError(domain: "Clothesline", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "请选择可访问的文件夹。"])
+                          userInfo: [NSLocalizedDescriptionKey: "请选择可访问的文件或文件夹。"])
         }
         if !attachedFolders.contains(where: { $0.standardizedFileURL.path == file.path }) {
             // Prepare persistence before changing the display. Normal bookmarks
@@ -137,6 +148,70 @@ final class Line: ObservableObject {
         dismissed.remove(file.fingerprint)
         UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
         updateVisibleItems()
+    }
+
+    func attachFiles(_ urls: [URL]) throws {
+        for url in urls { try attachFolder(url) }
+        revealed = true
+    }
+
+    private func remember(_ files: [DownloadFile]) {
+        var unique = Dictionary(uniqueKeysWithValues: recent.map { ($0.path, $0) })
+        for file in files { unique[file.path] = file }
+        let updated = Array(unique.values.compactMap { try? DownloadIndex.read($0.url) }
+            .sorted { $0.recency == $1.recency ? $0.path > $1.path : $0.recency > $1.recency }.prefix(200))
+        guard updated != recent else { return }
+        recent = updated
+        let bookmarks = recent.compactMap { try? $0.url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil) }
+        UserDefaults.standard.set(bookmarks, forKey: "recentFileBookmarks")
+    }
+
+    func recentFiles(matching query: String) -> [DownloadFile] {
+        recent.filter { query.isEmpty || $0.url.lastPathComponent.localizedCaseInsensitiveContains(query) }
+            .compactMap { try? DownloadIndex.read($0.url) }
+    }
+
+    func rename(_ id: UUID, stem: String) throws {
+        guard let item = items.first(where: { $0.id == id }),
+              let fresh = try DownloadIndex.read(item.url), fresh.fingerprint == item.file.fingerprint else {
+            throw NSError(domain: "Clothesline", code: 3, userInfo: [NSLocalizedDescriptionKey: "文件已改变或不存在，请刷新后重试。"])
+        }
+        let name = stem.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, !name.hasPrefix("."), !name.contains("/"), !name.contains(":"), !name.contains("\0") else {
+            throw NSError(domain: "Clothesline", code: 4, userInfo: [NSLocalizedDescriptionKey: "名称不能为空或包含 /、: 等无效字符。"])
+        }
+        let ext = item.file.isDirectory ? "" : item.url.pathExtension
+        let target = item.url.deletingLastPathComponent().appendingPathComponent(ext.isEmpty ? name : name + "." + ext)
+        guard target.path != item.url.path else { return }
+        guard !FileManager.default.fileExists(atPath: target.path) else {
+            throw NSError(domain: "Clothesline", code: 5, userInfo: [NSLocalizedDescriptionKey: "同名文件已存在，请使用其他名称。不会覆盖原文件。"])
+        }
+        try FileManager.default.moveItem(at: item.url, to: target)
+        attachedFolders = attachedFolders.map { $0.standardizedFileURL.path == item.file.path ? target : $0 }
+        latest.removeAll { $0.path == item.file.path }
+        recent.removeAll { $0.path == item.file.path }
+        if let updated = try DownloadIndex.read(target) { latest.insert(updated, at: 0); remember([updated]) }
+        saveAttachedFolders()
+        updateVisibleItems()
+    }
+
+    func requestRename(_ id: UUID) {
+        guard let item = items.first(where: { $0.id == id }) else { return }
+        interactionHeld = true
+        defer { interactionHeld = false }
+        let alert = NSAlert()
+        alert.messageText = "重命名“\(item.url.lastPathComponent)”"
+        alert.informativeText = "修改原文件名称，文件扩展名保持不变。"
+        let field = NSTextField(string: item.file.isDirectory || item.url.pathExtension.isEmpty
+            ? item.url.lastPathComponent : item.url.deletingPathExtension().lastPathComponent)
+        field.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
+        alert.accessoryView = field
+        alert.addButton(withTitle: "重命名"); alert.addButton(withTitle: "取消")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do { try rename(id, stem: field.stringValue) }
+        catch { NSAlert(error: error).runModal() }
     }
 
     private func saveAttachedFolders() {
@@ -158,6 +233,8 @@ final class Line: ObservableObject {
         var result: NSURL?
         try FileManager.default.trashItem(at: item.url, resultingItemURL: &result)
         latest.removeAll { $0.path == item.file.path }
+        recent.removeAll { $0.path == item.file.path }
+        remember([])
         attachedFolders.removeAll { $0.standardizedFileURL.path == item.file.path }
         saveAttachedFolders()
         updateVisibleItems()

@@ -45,6 +45,18 @@ struct LineView: View {
             let width = geo.size.width
             ZStack(alignment: .topLeading) {
                 Rope(width: width)
+                Button(action: line.showRecent) {
+                    Label("最近文件", systemImage: "tray.full")
+                        .font(.system(size: 12)).padding(8)
+                        .background(.regularMaterial, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .background(GeometryReader { g in
+                    Color.clear.preference(key: HitRectsKey.self,
+                        value: [line.drawerButtonID: g.frame(in: .global)])
+                })
+                .position(x: width - 70, y: Layout.panelHeight - 30)
+                .zIndex(2)
                 if line.items.isEmpty {
                     Text("最新下载的文件会挂在这里")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
