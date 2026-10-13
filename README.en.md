@@ -31,7 +31,7 @@ The application interface currently uses Chinese. This English page translates t
 ## New workflows (development source)
 
 - Right-click a file or folder to Pin / Unpin. Pinned items survive new arrivals and restarts; overflow can be scrolled. Removing an item unpins it; clearing unpins all without deleting originals.
-- Hover for the full name, source folder, size, creation and modification time. Folder size is not calculated recursively. Missing/inaccessible cards remain marked unavailable with last-known metadata and recover when accessible again.
+- Hover for about 0.4 seconds to show a separate information panel with the full name, source folder, size, creation and modification time. Folder size is not calculated recursively. Missing/inaccessible cards remain marked unavailable with last-known metadata and recover when accessible again.
 
 - Drag one or multiple Finder files/folders onto the revealed clothesline. Only references are stored; originals stay in place. A file picker is also available.
 - Right-click a card → Rename to change the original name while retaining its extension. Conflicts and stale files are rejected without overwriting.

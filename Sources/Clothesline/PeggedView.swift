@@ -58,7 +58,6 @@ struct PeggedView: View {
                 .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(.primary)
                 .frame(width: Layout.cardWidth - 24)
-                .help(line.identityDescription(item))
         }
         .padding(6)
         .frame(width: Layout.cardWidth - 8)

@@ -18,7 +18,6 @@ struct GrabArea: NSViewRepresentable {
         let id = item.id
         view.onShareChange = { line.interactionHeld = $0 }
         view.file = item.url
-        view.toolTip = line.identityDescription(item)
         view.canDrag = { line.validateAvailable(id) }
         view.dragImage = item.thumb
         view.dragText = item.noteText

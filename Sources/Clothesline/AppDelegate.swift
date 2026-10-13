@@ -6,6 +6,7 @@ import ServiceManagement
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let line = Line()
+    private let identityPanel = FileIdentityPanel()
     private var panel: LinePanel!
     private var statusItem: NSStatusItem!
     private var monitors: FolderMonitors?
@@ -62,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        identityPanel.hide()
         monitors?.stop()
         clipboard?.stop()
         line.clearClipboardStorage()
@@ -98,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Do not turn the source window click-through, hide/reposition it, or
         // move it to another screen while that tracking is in progress.
         if line.pressedID != nil || line.draggingID != nil || line.interactionHeld {
+            identityPanel.hide()
             lastInside = Date()
             panel.ignoresMouseEvents = false
             return
@@ -116,6 +119,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let local = CGPoint(x: mouse.x - panel.frame.minX,
                             y: panel.frame.maxY - mouse.y)
         let overCard = line.hitRects.values.contains { $0.insetBy(dx: -4, dy: -4).contains(local) }
+        let hovered = line.items.first { item in
+            line.hitRects[item.id]?.contains(local) == true
+        }
+        let externalDragging = NSEvent.pressedMouseButtons & 1 != 0
+        if line.revealed, !externalDragging, let item = hovered, let rect = line.hitRects[item.id] {
+            let anchor = NSRect(x: panel.frame.minX + rect.minX,
+                                y: panel.frame.maxY - rect.maxY,
+                                width: rect.width, height: rect.height)
+            identityPanel.update(id: item.id, description: line.identityDescription(item), anchor: anchor, screen: screen)
+        } else { identityPanel.hide() }
         let overPanel = panel.frame.contains(mouse)
 
         if atTop || (line.revealed && (overPanel || overCard)) {
