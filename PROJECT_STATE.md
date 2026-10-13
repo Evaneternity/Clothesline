@@ -43,4 +43,4 @@ SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏、SwiftUI 卡片
 
 ## GitHub
 
-已建立私有远端 origin：https://github.com/zhongguozhang/Clothesline，默认分支 main。用户授权后续开发持续同步；流程见 AGENTS.md。初次推送与 SHA 核验见本轮交付结果。
+已建立公开远端 origin：https://github.com/zhongguozhang/Clothesline，默认分支 main。用户授权后续开发持续同步；流程见 AGENTS.md。初次推送与 SHA 核验见本轮交付结果。

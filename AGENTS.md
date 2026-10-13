@@ -21,7 +21,7 @@ V0.1 优先交付可运行的 macOS 14+ 原生应用。参考 Tendedero 的视�
 
 ## GitHub 持续同步
 
-远端 origin：https://github.com/zhongguozhang/Clothesline（私有）；默认分支 main。
+远端 origin：https://github.com/zhongguozhang/Clothesline（公开）；默认分支 main。
 - 开始开发前 git fetch origin，检查当前分支与远端差异；干净且仅落后时使用 git pull --ff-only。
 - 分叉、冲突或未提交改动时先保留本地工作并审查差异，不覆盖任何一方。
 - 完成测试及状态/交接更新后提交并 git push；新分支使用 git push -u origin 分支名。禁止 force push。

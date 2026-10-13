@@ -108,4 +108,4 @@ Tendedero 源码由 Alejandro Buján 按 MIT 发布；本项目借鉴并改写�
 
 ## 持续开发
 
-遵循 AGENTS.md，每轮更新 PROJECT_STATE.md、HANDOFF_LATEST.md、CHANGELOG.md 并提交 Git。运行 scripts/test-core.sh、scripts/test-macos.sh 和 scripts/build-app.sh release。GitHub 私有仓库：https://github.com/zhongguozhang/Clothesline。每轮验证、更新交接、提交后推送；开始工作先检查远端变化，禁止强制推送。
+遵循 AGENTS.md，每轮更新 PROJECT_STATE.md、HANDOFF_LATEST.md、CHANGELOG.md 并提交 Git。运行 scripts/test-core.sh、scripts/test-macos.sh 和 scripts/build-app.sh release。GitHub 公开仓库：https://github.com/zhongguozhang/Clothesline。每轮验证、更新交接、提交后推送；开始工作先检查远端变化，禁止强制推送。

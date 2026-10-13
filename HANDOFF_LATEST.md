@@ -3,7 +3,7 @@
 日期：2026-10-13（Asia/Shanghai）。前序提交 b701cfc：独立 logo 更新。
 
 ## 远端
-GitHub 账户 zhongguozhang；私有仓库 https://github.com/zhongguozhang/Clothesline，origin/default branch main。保留完整本地历史，不上传 build/.build 或用户 Downloads。
+GitHub 账户 zhongguozhang；公开仓库 https://github.com/zhongguozhang/Clothesline，origin/default branch main。保留完整本地历史，不上传 build/.build 或用户 Downloads。
 
 ## 持续开发
 用户明确授权未来保持同步；已更新 AGENTS.md、README、PROJECT_STATE、CHANGELOG。每次开发先 fetch 检查差异，完成验证和交接更新后提交、push 并核对 SHA。禁止 force push，不自动公开仓库或发布 Release。同步失败应报告原因，不将仅本地提交写成已同步。
