@@ -2,7 +2,7 @@ import Foundation
 
 /// Platform-independent filtering and download-completion gate.
 /// A filename alone is not evidence that a browser has finished writing it.
-struct DownloadFile: Equatable {
+struct DownloadFile: Equatable, Codable {
     let url: URL
     let size: Int64
     let modified: Date

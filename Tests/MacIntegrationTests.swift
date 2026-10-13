@@ -6,7 +6,7 @@ struct MacIntegrationTests {
     @MainActor static func main() throws {
         _ = NSApplication.shared
         let defaults = UserDefaults.standard
-        let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine", "recentFileBookmarks"]
+        let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine", "recentFileBookmarks", "pinnedFiles"]
         let saved = keys.map { defaults.object(forKey: $0) }
         for key in keys { defaults.removeObject(forKey: key) }
         defer {
@@ -180,6 +180,25 @@ struct MacIntegrationTests {
         precondition(staging.recentFiles(matching: "renamed-document").count == 1, "drawer retains hidden files")
         try staging.attachFiles([renamed])
         precondition(staging.items.contains { $0.url == renamed }, "drawer can rehang hidden file")
+        let pinLine = Line(); pinLine.maxItems = 100
+        try pinLine.attachFiles([manualA])
+        let pinID = pinLine.items.first { $0.url.resolvingSymlinksInPath().path == manualA.resolvingSymlinksInPath().path }!.id
+        pinLine.togglePin(pinID)
+        pinLine.maxItems = 1; pinLine.updateVisibleItems()
+        try pinLine.attachFiles([renamed])
+        precondition(pinLine.items.count == 1 && pinLine.items[0].pinned && pinLine.items[0].url.resolvingSymlinksInPath().path == manualA.resolvingSymlinksInPath().path, "new file cannot evict pin")
+        let pinRestart = Line(); pinRestart.maxItems = 1; pinRestart.adopt([])
+        precondition(pinRestart.items.contains { $0.pinned && $0.url.lastPathComponent == manualA.lastPathComponent }, "pin survives restart")
+        let info = pinLine.identityDescription(pinLine.items[0])
+        precondition(info.contains(manualA.lastPathComponent) && info.contains(folder.lastPathComponent) && info.contains("修改"), "full identity metadata")
+        try FileManager.default.removeItem(at: manualA)
+        pinLine.adopt([])
+        precondition(pinLine.items[0].unavailable && pinLine.identityDescription(pinLine.items[0]).contains("最后记录"), "missing pin explicitly marked")
+        try bytes.write(to: manualA); pinLine.updateVisibleItems()
+        precondition(!pinLine.items[0].unavailable, "restored source becomes available")
+        pinLine.dismiss(pinLine.items[0].id)
+        precondition(!pinLine.items.contains { $0.pinned }, "taking down unpins without deleting")
+        print("PASS: pin capacity/restart, complete identity, missing source and recovery")
         let clipboardBoard = NSPasteboard.withUniqueName()
         let clipboardLine = Line()
         defer { clipboardLine.clearClipboardStorage(); clipboardBoard.releaseGlobally() }

@@ -11,12 +11,14 @@ struct Pegged: Identifiable, Equatable {
     var flying = false
     var noteText: String?
     var isClipboard = false
+    var pinned = false
+    var unavailable = false
     var url: URL { file.url }
     var isRecording: Bool {
         ["mov", "mp4", "m4v", "avi", "webm", "mkv"].contains(url.pathExtension.lowercased())
     }
     static func == (lhs: Pegged, rhs: Pegged) -> Bool {
-        lhs.id == rhs.id && lhs.thumb === rhs.thumb && lhs.falling == rhs.falling && lhs.noteText == rhs.noteText
+        lhs.id == rhs.id && lhs.thumb === rhs.thumb && lhs.falling == rhs.falling && lhs.noteText == rhs.noteText && lhs.pinned == rhs.pinned && lhs.unavailable == rhs.unavailable && lhs.file == rhs.file
     }
 }
 
@@ -42,6 +44,11 @@ final class Line: ObservableObject {
     }
     private var clipboardEntries: [ClipboardEntry] = []
     private var clipboardDirectory: URL?
+    private struct Pin: Codable {
+        var file: DownloadFile
+        var bookmark: Data
+    }
+    private var pins: [Pin] = []
     private var latest: [DownloadFile] = []
     @Published private(set) var recent: [DownloadFile] = []
     var interactionHeld = false
@@ -59,6 +66,9 @@ final class Line: ObservableObject {
     }
 
     init() {
+        if let data = UserDefaults.standard.data(forKey: "pinnedFiles") {
+            pins = (try? JSONDecoder().decode([Pin].self, from: data)) ?? []
+        }
         attachedFolders = (UserDefaults.standard.array(forKey: Self.foldersKey) as? [Data] ?? []).compactMap {
             var stale = false
             return try? URL(resolvingBookmarkData: $0, options: [], relativeTo: nil, bookmarkDataIsStale: &stale)
@@ -91,11 +101,25 @@ final class Line: ObservableObject {
         remember(originalFiles)
         let clipboardFiles = clipboardEntries.compactMap { try? DownloadIndex.read($0.url) }
         let combined = clipboardFiles + originalFiles
-        let selected = Array(combined.filter { !dismissed.contains($0.fingerprint) }.prefix(maxItems).reversed())
+        for index in pins.indices {
+            var stale = false
+            let url = (try? URL(resolvingBookmarkData: pins[index].bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &stale)) ?? pins[index].file.url
+            if let fresh = try? DownloadIndex.read(url) { pins[index].file = fresh }
+        }
+        let pinPaths = Set(pins.map { $0.file.path })
+        // Missing source cards remain explicit instead of silently disappearing.
+        let missing = items.filter { !$0.isClipboard && !pinPaths.contains($0.file.path) && (try? DownloadIndex.read($0.url)) == nil }.map(\.file)
+        var unique: [String: DownloadFile] = [:]
+        for file in combined + missing { unique[file.path] = (try? DownloadIndex.read(file.url)) ?? file }
+        let ordinary = (combined + missing).compactMap { unique.removeValue(forKey: $0.path) }
+            .filter { !pinPaths.contains($0.path) && !dismissed.contains($0.fingerprint) }
+        let selected = Array((pins.map(\.file) + ordinary.prefix(max(0, maxItems - pins.count))).reversed())
         let previous = Dictionary(uniqueKeysWithValues: items.map { ($0.file.fingerprint, $0) })
         var newItems: [Pegged] = []
         for file in selected {
-            if let existing = previous[file.fingerprint] {
+            if var existing = previous[file.fingerprint] {
+                existing.pinned = pinPaths.contains(file.path)
+                existing.unavailable = (try? DownloadIndex.read(file.url)) == nil
                 newItems.append(existing)
             } else {
                 let image = NSWorkspace.shared.icon(forFile: file.path)
@@ -103,13 +127,49 @@ final class Line: ObservableObject {
                 let entry = clipboardEntries.first { $0.url.path == file.path }
                 let note: String? = entry.flatMap { if case .text(let text) = $0.content { return text }; return nil }
                 let item = Pegged(id: UUID(), file: file, thumb: image,
-                                  tilt: Double.random(in: -2.5...2.5), noteText: note, isClipboard: entry != nil)
+                                  tilt: Double.random(in: -2.5...2.5), noteText: note, isClipboard: entry != nil, pinned: pinPaths.contains(file.path), unavailable: (try? DownloadIndex.read(file.url)) == nil)
                 newItems.append(item)
                 requestThumbnail(for: item)
             }
         }
         if items.map(\.id) != newItems.map(\.id) { scroll = 0 }
         if items != newItems { items = newItems }
+    }
+
+    func togglePin(_ id: UUID) {
+        guard let item = items.first(where: { $0.id == id }), !item.isClipboard else { return }
+        if pins.contains(where: { $0.file.path == item.file.path }) {
+            pins.removeAll { $0.file.path == item.file.path }
+        } else {
+            do {
+                let bookmark = try item.url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+                pins.append(Pin(file: item.file, bookmark: bookmark))
+                dismissed.remove(item.file.fingerprint)
+            } catch { NSAlert(error: error).runModal(); return }
+        }
+        savePins(); updateVisibleItems()
+    }
+    private func savePins() {
+        if let data = try? JSONEncoder().encode(pins) { UserDefaults.standard.set(data, forKey: "pinnedFiles") }
+    }
+    func identityDescription(_ item: Pegged) -> String {
+        let fresh = try? DownloadIndex.read(item.url)
+        let file = fresh ?? item.file
+        let size = file.isDirectory ? "文件夹（不递归计算大小）" : ByteCountFormatter.string(fromByteCount: file.size, countStyle: .file)
+        let date = DateFormatter(); date.dateStyle = .medium; date.timeStyle = .medium
+        let source = item.isClipboard ? "剪贴板（本次会话）" : file.url.deletingLastPathComponent().path
+        return "名称：\(item.noteText == nil ? file.url.lastPathComponent : "文字便签")\n来源：\(source)\n大小：\(size)\n创建：\(date.string(from: file.created))\n修改：\(date.string(from: file.modified))" +
+            (fresh == nil ? "\n⚠ 源文件不存在或无法访问；大小和时间为最后记录。" : "")
+    }
+    func validateAvailable(_ id: UUID) -> Bool {
+        guard let item = items.first(where: { $0.id == id }) else { return false }
+        guard (try? DownloadIndex.read(item.url)) != nil else {
+            updateVisibleItems()
+            let alert = NSAlert(); alert.messageText = "源文件不存在或无法访问"
+            alert.informativeText = item.url.path + "\n请检查文件位置或访问权限；可取下失效卡片。"
+            alert.runModal(); return false
+        }
+        return true
     }
 
     /// Clipboard payloads are owned session files, excluded from persistent history/bookmarks.
@@ -209,12 +269,14 @@ final class Line: ObservableObject {
 
     func dismiss(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
+        pins.removeAll { $0.file.path == item.file.path }; savePins()
         dismissed.insert(item.file.fingerprint)
         UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
         updateVisibleItems()
     }
 
     func dismissAll() {
+        pins.removeAll(); savePins()
         for item in items { dismissed.insert(item.file.fingerprint) }
         UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
         updateVisibleItems()
@@ -280,6 +342,14 @@ final class Line: ObservableObject {
             throw NSError(domain: "Clothesline", code: 5, userInfo: [NSLocalizedDescriptionKey: "同名文件已存在，请使用其他名称。不会覆盖原文件。"])
         }
         try FileManager.default.moveItem(at: item.url, to: target)
+        items.removeAll { $0.id == id }
+        for index in pins.indices where pins[index].file.path == item.file.path {
+            if let fresh = try DownloadIndex.read(target) {
+                pins[index].file = fresh
+                pins[index].bookmark = try target.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+            }
+        }
+        savePins()
         attachedFolders = attachedFolders.map { $0.standardizedFileURL.path == item.file.path ? target : $0 }
         latest.removeAll { $0.path == item.file.path }
         recent.removeAll { $0.path == item.file.path }
@@ -325,6 +395,8 @@ final class Line: ObservableObject {
         }
         var result: NSURL?
         try FileManager.default.trashItem(at: item.url, resultingItemURL: &result)
+        pins.removeAll { $0.file.path == item.file.path }; savePins()
+        items.removeAll { $0.id == id }
         latest.removeAll { $0.path == item.file.path }
         recent.removeAll { $0.path == item.file.path }
         remember([])
@@ -351,16 +423,19 @@ final class Line: ObservableObject {
     }
 
     func open(_ id: UUID) {
+        guard validateAvailable(id) else { return }
         guard let item = items.first(where: { $0.id == id }) else { return }
         NSWorkspace.shared.open(item.url)
     }
 
     func reveal(_ id: UUID) {
+        guard validateAvailable(id) else { return }
         guard let item = items.first(where: { $0.id == id }) else { return }
         NSWorkspace.shared.activateFileViewerSelecting([item.url])
     }
 
     func copy(_ id: UUID) {
+        guard validateAvailable(id) else { return }
         guard let item = items.first(where: { $0.id == id }) else { return }
         let pb = NSPasteboard.general
         pb.clearContents()
@@ -375,6 +450,7 @@ final class Line: ObservableObject {
     }
 
     func quickLook(_ id: UUID) {
+        guard validateAvailable(id) else { return }
         let active = items.map(\.url)
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         QuickLook.shared.show(active, at: index)

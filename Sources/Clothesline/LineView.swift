@@ -27,7 +27,7 @@ enum Layout {
         return ropeTop + 4 * sag(width: width) * f * (1 - f)
     }
     @MainActor static func x(index: Int, count: Int, width: CGFloat, visible: Int, scroll: CGFloat) -> CGFloat {
-        if Line.keepOnLine != nil && count > visible {
+        if count > visible {
             let newest = width / 2 + CGFloat(visible - 1) * spacing / 2
             return newest - CGFloat(count - 1 - index) * spacing + scroll
         }

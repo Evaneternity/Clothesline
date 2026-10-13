@@ -58,7 +58,7 @@ struct PeggedView: View {
                 .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(.primary)
                 .frame(width: Layout.cardWidth - 24)
-                .help(item.url.lastPathComponent)
+                .help(line.identityDescription(item))
         }
         .padding(6)
         .frame(width: Layout.cardWidth - 8)
@@ -76,6 +76,15 @@ struct PeggedView: View {
                 .padding(3)
                 .opacity(hovering && !dragging ? 1 : 0)
                 .allowsHitTesting(false)
+        }
+        .overlay(alignment: .topTrailing) {
+            if item.unavailable || item.pinned {
+                Label(item.unavailable ? "文件失效" : "已固定", systemImage: item.unavailable ? "exclamationmark.triangle.fill" : "pin.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(item.unavailable ? Color.red : Color.primary)
+                    .padding(4).background(.regularMaterial, in: Capsule())
+                    .padding(4).allowsHitTesting(false)
+            }
         }
         .overlay(GrabArea(item: item, line: line))
         .overlay(alignment: .bottom) {

@@ -18,6 +18,8 @@ struct GrabArea: NSViewRepresentable {
         let id = item.id
         view.onShareChange = { line.interactionHeld = $0 }
         view.file = item.url
+        view.toolTip = line.identityDescription(item)
+        view.canDrag = { line.validateAvailable(id) }
         view.dragImage = item.thumb
         view.dragText = item.noteText
         view.onClick = { line.quickLook(id) }
@@ -45,9 +47,12 @@ struct GrabArea: NSViewRepresentable {
                 menu.addItem(ClosureMenuItem("在 Finder 中显示") { line.reveal(id) })
                 menu.addItem(ClosureMenuItem("复制文件") { line.copy(id) })
                 menu.addItem(ClosureMenuItem("重命名…") { line.requestRename(id) })
+                let pin = ClosureMenuItem(item.pinned ? "取消固定" : "固定") { line.togglePin(id) }
+                pin.state = item.pinned ? .on : .off
+                menu.addItem(pin)
             }
             menu.addItem(ClosureMenuItem("分享…") { [weak view] in
-                guard let view else { return }
+                guard let view, line.validateAvailable(id) else { return }
                 let picker = NSSharingServicePicker(items: item.noteText.map { [$0] } ?? [item.url])
                 view.sharePicker = picker
                 picker.delegate = view
@@ -82,6 +87,7 @@ final class GrabView: NSView, NSDraggingSource, NSSharingServicePickerDelegate {
     var file: URL?
     var dragImage: NSImage?
     var dragText: String?
+    var canDrag: () -> Bool = { true }
     var onClick: () -> Void = {}
     var onDoubleClick: () -> Void = {}
     var onDismiss: () -> Void = {}
@@ -110,6 +116,7 @@ final class GrabView: NSView, NSDraggingSource, NSSharingServicePickerDelegate {
         guard let start = downPoint, !dragging, !pressedCross, let file else { return }
         let point = event.locationInWindow
         guard hypot(point.x - start.x, point.y - start.y) > 5 else { return }
+        guard canDrag() else { return }
         dragging = true
         pendingSingleClick?.cancel()
         onDragChange(true)
