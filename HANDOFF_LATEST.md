@@ -1,14 +1,14 @@
-# 最新交接：V0.1 图标更新
+# 最新交接：GitHub 上传与持续同步
 
-2026-10-13（Asia/Shanghai）；前序提交 29d1b1a。
+日期：2026-10-13（Asia/Shanghai）。前序提交 b701cfc：独立 logo 更新。
 
-## 本轮
-用户提供浅色圆角底、蓝色 T 恤、晾衣绳及深色夹子参考图，要求更换 logo。通过内置 image_gen 生成独立透明 PNG，替换 assets/clothesline-icon.png；菜单栏加载应用包同一 ICNS，避免继续显示旧篮子 emoji。直接 Swift 可执行环境缺少 ICNS 时仍用 emoji 兜底。
+## 远端
+GitHub 账户 zhongguozhang；私有仓库 https://github.com/zhongguozhang/Clothesline，origin/default branch main。保留完整本地历史，不上传 build/.build 或用户 Downloads。
 
-源图 1254 × 1254、带 alpha。生成方式、参考角色与完整提示词保存于 assets/ICON_DESIGN.md；旧图标可从 Git 恢复。没有使用 Tendedero 的图标或名称。
+## 持续开发
+用户明确授权未来保持同步；已更新 AGENTS.md、README、PROJECT_STATE、CHANGELOG。每次开发先 fetch 检查差异，完成验证和交接更新后提交、push 并核对 SHA。禁止 force push，不自动公开仓库或发布 Release。同步失败应报告原因，不将仅本地提交写成已同步。
 
-## 验证与交付
-scripts/build-app.sh release 和 scripts/test-macos.sh 均通过；签名、Info.plist 与 ICNS 全部尺寸检查通过，128 像素缩略图已视觉检查，新版已启动。构建脚本从 PNG 生成 16–1024 像素多尺寸图标。本轮不改变文件操作或拖拽逻辑。
+本轮只修改管理文档，不改应用源码；git diff --check。前轮 Release 构建和 macOS 回归已通过。首推包含源码、测试、独立图标与 MIT 许可证。
 
-## 下一步
-继续前序拖拽的微信/编辑窗口实际接收验收，以及预览、多屏、权限验收；仍为 V0.1 候选版。若 Finder 保留旧图标缓存，可重新打开 build/Clothesline.app；不修改系统图标缓存设置。
+## 尚待验收
+继续微信/编辑窗口实际拖拽、预览/打开、多屏、权限与浏览器下载验收；仍为 V0.1 候选版。没有后台定时同步任务；后续在每轮开发完成时推送。

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0 GitHub 同步 — 2026-10-13
+- 建立 zhongguozhang/Clothesline 私有仓库与 origin，上传完整本地版本历史。
+- 开发约定加入每轮 fetch、验证、提交、push 和 SHA 核验机制。
+
 ## 0.1.0 候选图标更新 — 2026-10-13
 - 按用户参考图替换为浅色圆角底、蓝色 T 恤、晾衣绳及深色夹子的独立图标。
 - 菜单栏使用同一应用图标；保留生成提示和来源说明于 assets/ICON_DESIGN.md。

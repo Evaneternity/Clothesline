@@ -39,4 +39,8 @@ SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏、SwiftUI 卡片
 - Quick Look、双击、实际 Finder 拖拽，Chrome/Safari 下载，权限拒绝/重新授权、睡眠、多屏、macOS 14 兼容性仍待验收。
 - 目录稳定仅看目录本身元数据，不递归判断内容写入；完成检测为启发式。
 - 手动目录读不到时不展示，书签保留便于恢复访问；未增加单独的目录权限错误 UI。
-- 隐藏记录尚未自动清理；本地 ad-hoc 签名，无公证/DMG/远端 Git，不打正式版本标签。
+- 隐藏记录尚未自动清理；本地 ad-hoc 签名，无公证/DMG，不打正式版本标签。
+
+## GitHub
+
+已建立私有远端 origin：https://github.com/zhongguozhang/Clothesline，默认分支 main。用户授权后续开发持续同步；流程见 AGENTS.md。初次推送与 SHA 核验见本轮交付结果。

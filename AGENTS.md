@@ -9,7 +9,7 @@ V0.1 优先交付可运行的 macOS 14+ 原生应用。参考 Tendedero 的视�
 3. 运行 scripts/test-core.sh；涉及 macOS 行为运行 scripts/test-macos.sh；构建 scripts/build-app.sh。不得将源码审查或模型测试写为 UI 实测。
 4. 更新 PROJECT_STATE.md（当前事实/证据/限制）、HANDOFF_LATEST.md（改动/命令/下一步）和 CHANGELOG.md；范围变化同步 ROADMAP.md。
 5. 检查 git diff --check，将代码和交接文档一起提交。main 保持可构建，较大工作使用 fix/ 或 feature/ 分支。
-6. 仅在版本验收完成后打 vX.Y.Z 标签；候选版用 vX.Y.Z-rc.N。不自动推送、发布或修改系统权限。
+6. 仅在版本验收完成后打 vX.Y.Z 标签；候选版用 vX.Y.Z-rc.N。用户已授权本项目持续同步 GitHub：每轮验证通过并提交后推送对应分支；不自动公开仓库、发布 Release 或修改系统权限。
 
 ## 安全与许可
 - UI 取下、清空、退出只改变展示状态，不删除、移动或覆盖源文件。
@@ -18,3 +18,12 @@ V0.1 优先交付可运行的 macOS 14+ 原生应用。参考 Tendedero 的视�
 - 读取 Downloads 及自选目录仅用于本地功能，不增加网络或遥测。
 - 保留 LICENSE 中 Alejandro Buján 的版权和 MIT 全文；应用包也携带 LICENSE。使用 Clothesline 独立名称及 assets/clothesline-icon.png，禁止引入上游名称、图标和文档图片。
 - 编译产物与缓存不入 Git。没有证据的功能标记“待验证”。
+
+## GitHub 持续同步
+
+远端 origin：https://github.com/zhongguozhang/Clothesline（私有）；默认分支 main。
+- 开始开发前 git fetch origin，检查当前分支与远端差异；干净且仅落后时使用 git pull --ff-only。
+- 分叉、冲突或未提交改动时先保留本地工作并审查差异，不覆盖任何一方。
+- 完成测试及状态/交接更新后提交并 git push；新分支使用 git push -u origin 分支名。禁止 force push。
+- 推送后核对本地 HEAD 与远端分支 SHA，报告同步状态。认证或网络失败须明确记录，不宣称已同步。
+- 仅同步源码、测试、图标、许可证与文档；不上传下载文件、缓存、构建产物、凭据。
