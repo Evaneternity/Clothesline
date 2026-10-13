@@ -56,3 +56,5 @@ DMG 构建脚本 scripts/build-dmg.sh，包含 Clothesline.app、Applications �
 发行完成：代码提交 0b20fd1，预发行标签 v0.1.0-rc.1。GitHub Release 两个资产已核对，DMG 摘要与本地一致；应用包已只读挂载检查并启动本地应用。
 
 本轮文档更新：README 开头改为简洁中文应用介绍，移除重复的灵感段落；“版权与来源”和 LICENSE 保留。未修改 logo 或应用功能。
+
+README 图标统一：标题引用 assets/clothesline-icon.png，菜单操作和验收清单采用当前 T 恤图标名称，移除全部篮子 emoji；本轮仅文档改动。

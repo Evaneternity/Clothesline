@@ -1,11 +1,9 @@
-# 最新交接：README 应用介绍
+# 最新交接：README 当前图标统一
 
-2026-10-13（Asia/Shanghai）；前序 adb5e59。
+2026-10-13（Asia/Shanghai）；前序 f4ea7af（应用介绍，此前连接失败未推送）。
 
-按用户截图指定位置，将 README 开头的英文灵感段落替换为中文应用介绍：原生 macOS 工具、顶部文件卡片、多目录监控、手动目录入口、自动隐藏/一直显示，以及取下和废纸篓的区别。
+用户明确要求修改 README 两处旧篮子。标题引用 assets/clothesline-icon.png（48 × 48）；验收清单改为“Clothesline T 恤图标”，同时修正权限说明中的旧篮子。没有改应用图标资产或重新发布 DMG。
 
-用户划掉的 logo 需求未执行。保留“版权与来源”和完整 LICENSE。仅文档修改，git diff --check；不重建或重新发布 DMG。继续候选版实际拖拽、最低系统兼容和 Apple 签名/公证准备。
+验证：git diff --check，README 无篮子 emoji，PNG 引用存在。前轮中文应用介绍及版权保留。提交后将两轮文档一起推送，核对远端 SHA；同步失败不能宣称已上线。
 
-本轮提交后推送 main，核对远端 SHA。
-
-同步状态：本地介绍修改已提交；GitHub HTTPS 推送两次连接失败（443 超时，fetch 另报 HTTP2 framing error），尚未同步。API 核对远端 main 仍为 adb5e59。网络恢复后优先推送此文档提交，不能宣称已上线。
+本轮推送结果：HTTPS 默认连接报 HTTP2 framing error，HTTP/1.1 重试报 Empty reply from server，尚未同步。开发前 fetch 成功确认本地仅领先；本地保留介绍与图标两轮修改，网络恢复后推送 main。

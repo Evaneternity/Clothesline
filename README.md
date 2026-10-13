@@ -1,4 +1,4 @@
-# 🧺 Clothesline · 晾衣绳
+# <img src="assets/clothesline-icon.png" alt="Clothesline 图标" width="48" height="48"> Clothesline · 晾衣绳
 
 **把刚刚下载完成的真实文件挂在 macOS 屏幕顶部。**
 
@@ -50,7 +50,7 @@ open build/Clothesline.app
 
 构建脚本默认使用本机架构（Apple Silicon 或 Intel）、`release` 配置，并进行本机 **ad-hoc 签名**，无需开发者证书。若需要 Debug 构建：`scripts/build-app.sh debug`。
 
-第一次读取 Downloads 时，macOS 可能要求授权。若自动权限没有弹出或监听失败，请点击菜单栏的 🧺 → **添加监控文件夹…** → 选择 Downloads。自选文件夹采用 security-scoped bookmark（能够使用时）保留访问权限。重新构建后，macOS 可能重新请求授权。
+第一次读取 Downloads 时，macOS 可能要求授权。若自动权限没有弹出或监听失败，请点击菜单栏的 Clothesline T 恤图标 → **添加监控文件夹…** → 选择 Downloads。自选文件夹采用 security-scoped bookmark（能够使用时）保留访问权限。重新构建后，macOS 可能重新请求授权。
 
 **候选安装包尚未 Apple 公证**；已提供 `.dmg`，暂不支持自动更新。项目不会修改系统的截图设置，不截屏，也不读取剪贴板。
 
@@ -102,7 +102,7 @@ Clothesline/
 
 ## 后续 macOS 验收清单
 
-- [ ] Mac 源码构建成功，打开后菜单栏可见 🧺。
+- [ ] Mac 源码构建成功，打开后菜单栏可见 Clothesline T 恤图标。
 - [ ] 选择 Downloads 后自动显示最近文件（约 2 秒稳定扫描）。
 - [ ] Chrome 下载 PDF/ZIP 时 `.crdownload` 不出现，完成后出现。
 - [ ] Safari `.download` 包未出现，完成后出现。
