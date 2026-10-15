@@ -1,11 +1,9 @@
-# 最新交接：修复悬停身份提示
+# 最新交接：剪贴板菜单精简
 
-2026-10-13。用户实测固定可用，但卡片悬停未显示原生 tooltip。
+2026-10-15。按用户要求，仅移除“挂上当前剪贴板”和底部“仅本机…”灰色说明；自动图片/文字开关、清空及错误提示保持。未实施此前讨论的手动暂存或持久保存方案。
 
-移除卡片 SwiftUI help 与 GrabView tooltip；新增 FileIdentityPanel。AppDelegate 利用已有鼠标轮询与卡片 hitRects 明确判断悬停，0.4 秒后显示独立非激活、鼠标穿透信息面板，展示完整名称、来源、大小与时间。面板在卡片下方，屏幕边界内定位，不受晾衣绳 hosting view 的高度裁剪。移开、按下、拖动或模态操作取消提示。
+AppDelegate 删除两处菜单创建代码；双语 README 同步移除手动入口介绍，保留隐私与临时副本说明。内部 captureCurrent 测试能力保留。
 
-scripts/test-macos.sh 新增真实 NSPanel 创建/延迟显示内容/离开取消回归，既有固定、失效、剪贴板与文件安全测试通过；scripts/build-app.sh release（含核心测试）通过。此为系统面板生命周期测试，不能等同完整鼠标 UI 验收。重启本地构建供用户验收，rc.2 DMG 不变。同步双语 README、状态并推送 main。
+验证：scripts/test-core.sh、scripts/test-macos.sh、scripts/build-app.sh release 全部通过。macOS 废纸篓回归与 SwiftPM 在沙盒内受权限限制，提升执行权限后通过；既有粘贴板/CoreDrag/颜色空间诊断不影响通过。git diff --check 通过。未进行完整菜单 UI 实测；本地构建位于 build/Clothesline.app，rc.2 DMG 未更新。
 
-同步未成功：两次推送超时，fetch 空响应；公开 API 核验远端仍为 d3155aa，本地修复提交 2d63e15。修复版已通过原生应用工具启动，完整鼠标悬停待用户验收。后续重试推送并核验 SHA。
-
-同步恢复（2026-10-13）：用户要求再次同步后，推送成功，远端 main 已接收 b18fb56，包含上述悬停修复。源码与文档已同步，rc.2 安装包未更新，完整鼠标悬停仍待用户验收。
+下一步：用户验收菜单显示；按开发约定提交并推送 main，核对远端 SHA。

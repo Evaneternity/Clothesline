@@ -212,22 +212,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         text.state = clipboard?.textEnabled == true ? .on : .off
         clipboardMenu.addItem(text)
         clipboardMenu.addItem(.separator())
-        clipboardMenu.addItem(ClosureMenuItem("挂上当前剪贴板") { [weak self] in
-            do {
-                if try self?.clipboard?.captureCurrent() != true {
-                    let alert = NSAlert()
-                    alert.messageText = "剪贴板中没有可挂载的图片或文字"
-                    alert.informativeText = "支持图片（32 MB 以内）和文字（200 KB 以内）；文件请从 Finder 拖入。"
-                    alert.runModal()
-                }
-            } catch { NSAlert(error: error).runModal() }
-        })
         clipboardMenu.addItem(ClosureMenuItem("清空剪贴板挂载内容") { [weak self] in
             self?.line.clearClipboardStorage()
         })
-        let clipboardHint = NSMenuItem(title: "仅本机、会话内保存；文字可能含敏感信息", action: nil, keyEquivalent: "")
-        clipboardHint.isEnabled = false
-        clipboardMenu.addItem(clipboardHint)
         if let failure = clipboard?.failure {
             let errorItem = NSMenuItem(title: "⚠ \(failure)", action: nil, keyEquivalent: "")
             errorItem.isEnabled = false; clipboardMenu.addItem(errorItem)

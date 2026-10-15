@@ -35,7 +35,7 @@ The application interface currently uses Chinese. This English page translates t
 
 - Drag one or multiple Finder files/folders onto the revealed clothesline. Only references are stored; originals stay in place. A file picker is also available.
 - Right-click a card → Rename to change the original name while retaining its extension. Conflicts and stale files are rejected without overwriting.
-- Clipboard images/screenshots and text have independent switches, both off by default. Automatic intake handles new copies only; Hang Current Clipboard works manually with both switches off.
+- Clipboard images/screenshots and text have independent switches, both off by default. Automatic intake handles new copies only.
 - Text becomes a note with preview, double-click editing, copy, and Save As. Images support preview, copying, and Save As. Duplicate content is not added again; the app ignores its own automatic clipboard feedback.
 - Only clipboard screenshots are handled. Saved screenshots are ordinary files, displayed only through existing folder monitors or manual attachment.
 - Clipboard copies are local and session-only, excluded from persistent recent-file bookmarks. Quitting or Clear Clipboard Items cleans owned copies without touching exported files; an abnormal exit may leave copies in the system temporary directory. Limits: 100 items per session, image inputs up to 32 MB, text up to 200 KB. Copied text may contain sensitive information; enable it only when wanted.
@@ -96,7 +96,7 @@ macOS may request folder access. If watching fails, use the T-shirt menu bar ico
 - Removing cards, clearing the clothesline, or quitting does not delete, move, or overwrite original files. Only the separately confirmed Trash action moves originals. No permanent deletion is provided; folders move with all their contents.
 - Download completion is heuristic. A download paused for more than two seconds under its final filename without a companion temporary file may appear early.
 - Watching is limited to top-level items and does not recursively monitor folder contents. Folder stability does not guarantee every contained file has finished writing.
-- Preferences, folder bookmarks, and hidden-item records are stored locally. The app has no network logic, telemetry, accounts, or screenshot capture. Clipboard content is read only for explicitly enabled types or a manual capture.
+- Preferences, folder bookmarks, and hidden-item records are stored locally. The app has no network logic, telemetry, accounts, or screenshot capture. Clipboard content is read only for explicitly enabled types.
 - Integration tests verify real directory events, file URLs, safe removal, Trash recovery, multiple watchers, bookmark restoration, and drag payloads. Actual receiving-app drag behavior, full UI interactions, browser downloads, permission denial, sleep, multiple displays, and macOS 14 compatibility still require manual acceptance.
 - Developer ID notarization, automatic updates, launch at login, full accessibility, and additional application languages are not included.
 
