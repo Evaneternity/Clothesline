@@ -30,34 +30,22 @@ These are candidate packages: macOS is ad-hoc signed and not notarized; Windows 
 
 The detailed features and build instructions below primarily describe macOS; see the Windows guide for platform differences. Choose **Language / 语言 → English** in the app menu for English menus.
 
-## New workflows (development source)
-
-- Right-click a file or folder to Pin / Unpin. Pinned items survive new arrivals and restarts; overflow can be scrolled. Removing an item unpins it; clearing unpins all without deleting originals.
-- Hover for about 0.4 seconds to show a separate information panel with the full name, source folder, size, creation and modification time. Folder size is not calculated recursively. Missing/inaccessible cards remain marked unavailable with last-known metadata and recover when accessible again.
-
-- Drag one or multiple Finder files/folders onto the revealed clothesline. Only references are stored; originals stay in place. A file picker is also available.
-- Right-click a card → Rename to change the original name while retaining its extension. Conflicts and stale files are rejected without overwriting.
-- Clipboard images/screenshots and text have independent switches, both off by default. Automatic intake handles new copies only.
-- Text becomes a note with preview, double-click editing, copy, and Save As. Images support preview, copying, and Save As. Duplicate content is not added again; the app ignores its own automatic clipboard feedback.
-- Only clipboard screenshots are handled. Saved screenshots are ordinary files, displayed only through existing folder monitors or manual attachment.
-- Clipboard copies are local and session-only, excluded from persistent recent-file bookmarks. Quitting or Clear Clipboard Items cleans owned copies without touching exported files; an abnormal exit may leave copies in the system temporary directory. Limits: 100 items per session, image inputs up to 32 MB, text up to 200 KB. Copied text may contain sensitive information; enable it only when wanted.
-- Open Recent Files from the rope or menu to search up to 200 persistent recent file references, drag them out, or hang them again. Missing/inaccessible originals are omitted.
-- Right-click → Share opens the macOS share picker. Available services depend on your system and installed apps.
-
-These additions are included in the rc.3 universal candidate. End-to-end mouse interaction and actual sharing require manual acceptance.
-
 ## Features
 
-- Watch Downloads and multiple additional folders simultaneously. Added folders persist across restarts; the menu lists each folder and any access errors.
-- Show recent files and top-level folders, and automatically check newly added items.
-- Hang selected folders as persistent shortcuts without moving them. This is separate from watching their contents.
-- Filter hidden files, symbolic links, and temporary downloads such as `.crdownload`, `.download`, `.part`, and `.tmp`.
-- Wait for two stable scans and at least two seconds without changes before displaying a file. A corresponding temporary download also prevents it from appearing.
-- Generate thumbnails for supported documents, images, and videos; use system icons for other files and folders.
-- Cycle six clothespin colors, with different colors on neighboring cards, and retain spring animations and highlights.
-- Preview with Quick Look, open in the default app, reveal in Finder, copy, hide, or move to Trash.
-- Drag real file URLs into other apps or Finder. The source offers copy only; the receiving app decides how to handle the drop.
-- Choose automatic hiding or always-visible mode, remembered across restarts. Use `⌃⌥T` to toggle pinned visibility.
+- **Watch downloads**: Watch Downloads and multiple added folders, showing recent files and top-level folders. Watched folders persist across restarts; polling covers missed events and wake from sleep.
+- **Detect completed downloads**: Filter hidden files, symbolic links, and temporary items such as `.crdownload`, `.download`, `.part`, and `.tmp`. Display files after two stable scans, at least two seconds without changes, and no companion temporary download.
+- **Hang files and folders**: Drag one or multiple items from Finder or select them from the menu. Store persistent references while originals stay in place.
+- **Preview and open**: Show document, image, and video thumbnails, with system icons for other types. Click for Quick Look, double-click to open in the default app, and open folders in Finder.
+- **Drag files out**: Provide real files to other apps or Finder with copy-only effects. Originals stay in place. Right-click to copy or reveal in Finder.
+- **Pin frequent items**: Pin individual files or folders so new arrivals cannot displace them. Pins survive restarts; overflow can be scrolled. Taking an item down unpins it; clearing unpins all.
+- **Identify files clearly**: Hover for about 0.4 seconds to see the full name, source folder, size, and creation/modification dates. Folder contents are not counted recursively. Unavailable cards retain last-known metadata and recover when accessible again.
+- **Rename quickly**: Rename the original file while keeping its extension. Reject collisions and stale metadata without overwriting another file.
+- **Recent files drawer**: Search up to 200 recent file references, hang them again, or drag them out. Missing or inaccessible originals are omitted.
+- **Clipboard images and text**: Independent switches, both off by default, accept new copies only. Notes support preview, editing, copying, and Save As; images support preview, copying, and Save As. Deduplicate content and suppress the app's own copies. Saved screenshots use ordinary folder watching.
+- **Session content management**: Clipboard copies stay within the current session and out of persistent recent records. Quitting or clearing removes only owned copies, preserving exported files; crashes may leave temporary copies. Limits: 100 items per session, image inputs up to 32 MB, and text up to 200 KB. Enable intake as needed.
+- **System sharing**: Right-click → Share opens the macOS share picker. AirDrop, Mail, and other services depend on the system and installed apps.
+- **Safe removal**: Taking cards down, clearing, or quitting does not delete, move, or overwrite originals. Only a separately confirmed Move to Trash action moves files or folders and their contents; restore them in Finder. Reset hidden records to show removed files again; replacing a download also allows it to reappear.
+- **Flexible display**: Alternating colorful clothespins and spring animations, automatic hiding or always-visible mode, adjustable item counts and card size, and saved preferences. Use `⌃⌥T` to toggle visibility.
 
 ## Quick reference
 
@@ -76,22 +64,6 @@ These additions are included in the rc.3 universal candidate. End-to-end mouse i
 | Always visible / auto-hide | Save the display preference |
 | Show removed files again | Clear hidden-item records |
 | `⌃⌥T` | Toggle pinned visibility |
-
-## Build from source
-
-Requires macOS 14+ and Apple Command Line Tools (Swift 5.9+) or Xcode.
-
-```bash
-cd Clothesline
-scripts/test-core.sh
-scripts/test-macos.sh
-scripts/build-app.sh release
-open build/Clothesline.app
-```
-
-Use `scripts/build-app.sh debug` for a debug build. The script builds for the host architecture and signs locally with ad-hoc signing by default. Set `SIGN_IDENTITY` to use an installed signing identity; Apple notarization is a separate step. Build a DMG with `scripts/build-dmg.sh`.
-
-macOS may request folder access. If watching fails, use the T-shirt menu bar icon → 添加监控文件夹… and select Downloads. Bookmarks retain access when available; rebuilding may trigger another permission request.
 
 ## Safety and limitations
 
@@ -118,5 +90,3 @@ Development follows [AGENTS.md](AGENTS.md). Each iteration updates [PROJECT_STAT
 - **Language / 语言** switches Simplified Chinese and English menus, card context menus, and recent files UI, preserving the choice across launches.
 
 The rc.3 universal candidate is `0.1.0-rc.3` (build 3) and includes these additions.
-
-Build a Universal DMG with `scripts/build-dmg.sh`. Optional targets: `native`, `arm64`, or `x86_64`. App builds use `scripts/build-app.sh release [universal|native|arm64|x86_64]`.

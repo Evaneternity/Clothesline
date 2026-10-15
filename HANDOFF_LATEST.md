@@ -1,9 +1,7 @@
-# 最新交接：README 演示与统一下载
+# 最新交接：README 功能介绍整合
 
-2026-10-15。用户要求 macOS/Windows 下载放一起、使用演示上移、删除简介旧状态段。
+2026-10-15。按用户要求，README.md 的“新增工作流（源码开发版）”和“功能（V0.1）”去重整理为单一“功能介绍”，英文页合并为 Features。删除中文“macOS 构建与运行”和英文 Build from source 章节及残留构建命令；保留统一下载、视频、应用菜单、操作速查与许可。顺带修正旧限制列表对开机启动/英文界面的过时描述。
 
-README.md 与 README.en.md 现在依次为简介 → 使用演示 → 统一下载表格 → 功能与构建说明。删除原单独 Windows 章节与旧状态段，将两个平台的包、要求和校验入口集中在一张表。保留独立视频附件 URL，macOS rc.3 与 Windows rc.1 的原下载地址未变，未修改应用源码或安装包。
+本轮仅文档改动。验证：双语功能覆盖与章节顺序审查、git diff --check；scripts/build-app.sh release（含核心测试）按项目约定执行。无需重复 macOS UI 或 Windows 安装回归，未声称 UI 实测。
 
-验证：审查双语顺序、下载链接和 Markdown 表格，git diff --check；按项目约定执行 scripts/build-app.sh release（含 test-core）。本轮不涉及 macOS 行为，无需重复 UI 或 Windows 安装测试。
-
-下一步：提交并推送 main，核对远端 SHA。现有 macOS/Windows 的人工 UI 验收仍按 PROJECT_STATE.md 跟进，不重复发行已有安装包。
+下一步：提交、推送 main，并核对远端 SHA；已有候选安装包不重新发行，平台 UI 待验收项仍见 PROJECT_STATE.md。
