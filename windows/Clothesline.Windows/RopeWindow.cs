@@ -209,7 +209,8 @@ internal sealed partial class RopeWindow : Window
         var local = PointFromScreen(Native.Cursor);
         var overCard = Height>8 && local.X>=0 && local.X<=Width && local.Y>=0 && local.Y<=Height && cardViews.Any(v => { var p=v.TranslatePoint(new Point(),this); return new Rect(p,v.RenderSize).Contains(local); });
         var nearTop = local.X>=0 && local.X<=Width && local.Y>=0 && local.Y<=8;
-        if (nearTop || overCard) lastInside=DateTime.UtcNow;
+        var externalDrop = Native.MousePressed && Height>8 && local.X>=0 && local.X<=Width && local.Y>=0 && local.Y<=Height;
+        if (nearTop || overCard || externalDrop) lastInside=DateTime.UtcNow;
         var reveal=settings.AlwaysVisible || DateTime.UtcNow-lastInside<TimeSpan.FromMilliseconds(800);
         Height=reveal ? 178 : 8;
         Native.ClickThrough(this, !reveal || (!overCard && !Native.MousePressed));
