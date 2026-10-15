@@ -5,3 +5,5 @@
 本轮仅文档改动。验证：双语功能覆盖与章节顺序审查、git diff --check；scripts/build-app.sh release（含核心测试）按项目约定执行。无需重复 macOS UI 或 Windows 安装回归，未声称 UI 实测。
 
 下一步：提交、推送 main，并核对远端 SHA；已有候选安装包不重新发行，平台 UI 待验收项仍见 PROJECT_STATE.md。
+
+同步记录：正文提交 86a644f；fetch 超时，推送两次（35/30 秒）超时。继续重试并核对远端；不能仅依据本地提交宣称 GitHub 页面已更新。
