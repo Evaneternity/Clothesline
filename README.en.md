@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
 These are candidate packages: macOS is ad-hoc signed and not notarized; Windows is not code-signed. Verify the download source and follow the system's first-launch prompts.
 
-The detailed features and build instructions below primarily describe macOS; see the Windows guide for platform differences. Choose **Language / 语言 → English** in the app menu for English menus.
+The detailed features and usage instructions below primarily describe macOS; see the Windows guide for platform differences. Choose **Language / 语言 → English** in the app menu for English menus.
 
 ## Features
 
