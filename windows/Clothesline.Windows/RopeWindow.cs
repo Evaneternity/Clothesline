@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -237,6 +239,10 @@ internal sealed partial class RopeWindow : Window
             if (clipboardHashes.Contains(hash) || clipboardItems.Count>=100) { clipboardSequence=sequence; return; }
             clipboardFolder ??= System.IO.Path.Combine(System.IO.Path.GetTempPath(),"Clothesline-Clipboard-"+Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(clipboardFolder);
+            var security=new DirectorySecurity(); security.SetAccessRuleProtection(true,false);
+            var owner=WindowsIdentity.GetCurrent().User!; security.SetOwner(owner);
+            security.AddAccessRule(new FileSystemAccessRule(owner,FileSystemRights.FullControl,InheritanceFlags.ContainerInherit|InheritanceFlags.ObjectInherit,PropagationFlags.None,AccessControlType.Allow));
+            new DirectoryInfo(clipboardFolder).SetAccessControl(security);
             var path=System.IO.Path.Combine(clipboardFolder,Guid.NewGuid()+extension); File.WriteAllBytes(path,bytes);
             clipboardItems[path]=note; clipboardHashes.Add(hash); clipboardSequence=sequence; signature=""; Render();
         }
