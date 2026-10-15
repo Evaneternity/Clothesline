@@ -150,3 +150,9 @@ Windows 验证进展：Windows runner 38700774792（e3eb25b）已成功完成核
 Windows 发行完成（2026-10-15）：windows-v0.1.0-rc.1 指向实际验证源 8b2e09b；Windows 构建 38701416790、云端发布 38702352934 均 success。Release 公开、prerelease=true、draft=false，Setup 54,961,625 字节，SHA-256 1afbe5bf8d65e057fca85f05ed4627bcc54eed038934701b41a545b10b5bcaad；便携 ZIP 77,658,705 字节，SHA-256 d89d81a717d870fd50ac63ca83f7abbfd45bb7d25af48cfaf8c782027daf8174。SHA256SUMS.txt 同时提供；发布工作流校验资产 SHA256、PE x64、随包运行时与原作者 MIT，远端资产 digest 已核对。根目录双语下载已指向实际存在资产。
 
 main 与 Windows 分支已核验到 430dce6，包含所有此前 Windows 开发提交；本次仅文档最终记录后继续推送。macOS rc.3 资产与源代码功能保持原状。完整 Windows 10/11 客户端桌面拖放、登录启动与多 DPI 未人工验收；构建运行在 Windows Server 2022 runner，不宣称两者等价。
+
+## README 下载与演示布局（2026-10-15）
+
+按用户要求移除简介中的旧 V0.1 本地状态段，将演示紧接产品简介；macOS 与 Windows 下载整合为演示下方同一表格，保留 DMG、Setup、便携 ZIP、系统要求及各自发行/校验入口。中英文同步，保留视频附件原地址和 Windows 详细说明入口。本轮仅改文档，不更新程序或发行资产。
+
+本轮核心测试、arm64/x86_64 通用构建及 git diff --check 通过；未声称 GitHub 浏览器界面已实测。

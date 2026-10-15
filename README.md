@@ -8,16 +8,6 @@ Clothesline（晾衣绳）提供 macOS 和 Windows 原生版本，将最近下�
 
 默认监控 Downloads，也可添加多个监控文件夹，或手动挂上常用目录。晾衣绳支持自动隐藏与一直显示；取下卡片只隐藏入口，macOS 另提供独立确认的“移到废纸篓”操作。所有功能在本机运行，无需账号或云端服务。
 
-**状态：V0.1 本地候选版。** 已在 macOS 26.6.2 / Apple Silicon 构建并启动，核心与 macOS 监听、安全测试通过。完整 UI 验收仍待完成，见 PROJECT_STATE.md 和 HANDOFF_LATEST.md。
-
-## Windows 版本
-
-[下载 Windows x64 安装程序](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-Setup.exe) · [便携 ZIP](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-portable.zip) · [校验文件与发行说明](https://github.com/zhongguozhang/Clothesline/releases/tag/windows-v0.1.0-rc.1)
-
-适用于 Windows 10 1809+ / Windows 11 x64（Intel、AMD），内置运行时，无需另装 .NET。启动后在任务栏通知区域找到晾衣绳图标，鼠标移至主屏工作区域顶部展开。支持多目录监听、文件拖入拖出、固定、重命名、最近文件、剪贴板、开机启动、中英文切换等。首版为候选版，完整桌面操作待验收，尚未代码签名；详情与功能差异见 [Windows 使用说明](windows/README.md)。
-
-以下详细功能、录屏及构建说明主要针对 macOS。
-
 ## 使用演示
 
 下面是约 36 秒的实际使用录屏，展示晾衣绳的文件卡片与彩色夹子。
@@ -27,6 +17,20 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 **[下载演示视频（MP4，约 4 MB）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-demo.mp4)**
 
 rc.3 通用候选安装包包含录屏中的彩色夹子和后续功能更新。
+
+## 下载安装
+
+| 系统 | 安装包 | 系统要求 | 发行说明与校验 |
+|---|---|---|---|
+| macOS · rc.3 | [通用 DMG](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.3/Clothesline-0.1.0-rc.3-universal.dmg) | macOS 14+，Intel / Apple Silicon | [版本与 SHA-256](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3) |
+| Windows · rc.1 | [安装程序](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-Setup.exe) · [便携 ZIP](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-portable.zip) | Windows 10 1809+ / 11，x64（Intel、AMD） | [版本与 SHA-256](https://github.com/zhongguozhang/Clothesline/releases/tag/windows-v0.1.0-rc.1) |
+
+- **macOS**：打开 DMG，将 Clothesline.app 拖入 Applications，再打开应用。通用包包含 Intel 与 Apple Silicon 两种原生架构。
+- **Windows**：运行安装程序，或完整解压便携 ZIP 后运行 Clothesline.exe，无需另装 .NET。在任务栏通知区域找到图标，鼠标移至主屏工作区域顶部展开；详情见 [Windows 使用说明](windows/README.md)。
+
+当前均为候选安装包：macOS 尚未 Developer ID 签名/Apple 公证，Windows 尚未代码签名。首次打开时请核对下载来源，并按系统提示操作。
+
+以下详细功能与构建说明主要针对 macOS；Windows 功能差异见上方使用说明。
 
 ## 新增工作流（源码开发版）
 
@@ -62,14 +66,6 @@ rc.3 通用候选安装包包含录屏中的彩色夹子和后续功能更新。
 - 菜单栏选择“一直显示晾衣绳”或“自动隐藏晾衣绳”；`⌃⌥T` 切换，重启后保留选择。
 - 已移除条目保留本地抑制记录，重新下载替换文件后可再次显示。
 - 轮询兜底用于处理事件丢失和睡眠唤醒。
-
-## 下载安装（V0.1 候选版）
-
-[下载 Clothesline DMG（Intel / Apple Silicon 通用）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.3/Clothesline-0.1.0-rc.3-universal.dmg) · [发行说明和 SHA-256 校验文件](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3)
-
-要求 macOS 14+，支持 Intel（x86_64）和 Apple Silicon（M 系列，arm64）。同一个 Universal 安装包包含两种原生架构；Intel 真机与 macOS 14 最低版本仍待验收。打开 DMG，将 Clothesline.app 拖到 Applications，再打开应用。当前仅 ad-hoc 签名，未 Developer ID 签名/公证；macOS 可能阻止首次运行，请确认来自本仓库后，按系统“隐私与安全性”的提示允许打开。
-
-默认监控 Downloads。菜单“添加监控文件夹…”可以一次选择多个目录，原监控继续运行；添加列表重启后保留。旧版本自选监控目录会保留，同时补回默认 Downloads。菜单列出所有目录及各自错误。 “挂上文件夹…”仅添加目录快捷入口，与持续监控内容不同。
 
 ## macOS 构建与运行
 

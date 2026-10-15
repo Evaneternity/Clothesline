@@ -8,16 +8,6 @@ Clothesline is a native file utility for macOS and Windows that presents recent 
 
 It watches Downloads by default. Add more watched folders or hang frequently used folders as shortcuts. Choose automatic hiding or keep the clothesline visible. Removing a card only hides its shortcut; macOS also offers a separate, confirmed Move to Trash action. Everything runs locally, without an account or cloud service.
 
-**Status: V0.1 release candidate.** Built on macOS 26.6.2 / Apple Silicon. Core and macOS integration tests cover watching real files and safe file operations. Full manual UI acceptance remains pending; see [project state](PROJECT_STATE.md).
-
-## Windows
-
-[Download Windows x64 Setup](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-Setup.exe) · [Portable ZIP](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-portable.zip) · [Checksums and release notes](https://github.com/zhongguozhang/Clothesline/releases/tag/windows-v0.1.0-rc.1)
-
-For Windows 10 1809+ / Windows 11 x64 (Intel/AMD), with the runtime included. Find Clothesline in the taskbar notification area, then move the pointer to the top of the primary work area. Includes watched folders, file drag and drop, pinning, renaming, recent files, clipboard intake, launch at login, and Chinese/English menus. This is an unsigned candidate; full desktop acceptance remains pending. See the [Windows guide and feature differences](windows/README.en.md).
-
-The detailed features, recording, and build instructions below primarily describe macOS.
-
 ## Demo
 
 A 36-second recording showing file cards and colorful clothespins. The rc.3 universal candidate includes the colorful clothespins and subsequent updates.
@@ -28,13 +18,17 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
 ## Download and install
 
-[Download Universal DMG (Intel / Apple Silicon)](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.3/Clothesline-0.1.0-rc.3-universal.dmg) · [Release notes and SHA-256 checksum](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3)
+| System | Package | Requirements | Release notes and checksums |
+|---|---|---|---|
+| macOS · rc.3 | [Universal DMG](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.3/Clothesline-0.1.0-rc.3-universal.dmg) | macOS 14+, Intel / Apple Silicon | [Release and SHA-256](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3) |
+| Windows · rc.1 | [Setup](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-Setup.exe) · [Portable ZIP](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-portable.zip) | Windows 10 1809+ / 11, x64 (Intel/AMD) | [Release and SHA-256](https://github.com/zhongguozhang/Clothesline/releases/tag/windows-v0.1.0-rc.1) |
 
-Requires macOS 14+. One Universal DMG contains native Intel (x86_64) and Apple Silicon (arm64) executables. Intel hardware and the macOS 14 minimum remain to be tested. Open the DMG, drag Clothesline.app into Applications, and launch it.
+- **macOS**: Open the DMG, drag Clothesline.app into Applications, and launch it. One Universal package includes native Intel and Apple Silicon code.
+- **Windows**: Run Setup, or extract the entire portable ZIP and run Clothesline.exe. The runtime is included. Find the tray icon and move the pointer to the top of the primary work area. See the [Windows guide](windows/README.en.md).
 
-The candidate uses ad-hoc signing and has not been signed with Developer ID or notarized by Apple. macOS may block the first launch. Verify that you downloaded it from this repository, then follow the system's Privacy & Security instructions to allow opening it.
+These are candidate packages: macOS is ad-hoc signed and not notarized; Windows is not code-signed. Verify the download source and follow the system's first-launch prompts.
 
-Choose **Language / 语言 → English** in the menu to switch the application menus. The choice is saved. System dialogs and errors may follow your macOS language.
+The detailed features and build instructions below primarily describe macOS; see the Windows guide for platform differences. Choose **Language / 语言 → English** in the app menu for English menus.
 
 ## New workflows (development source)
 
