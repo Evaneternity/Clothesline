@@ -1,6 +1,6 @@
 # Clothesline for Windows — 首个候选版
 
-原生 WPF / .NET 8，目标 Windows 10 1809+ / Windows 11 x64（Intel、AMD）。使用独立晾衣绳图标，安装包携带仓库完整 MIT 许可。
+原生 WPF / .NET 10 LTS，目标 Windows 10 1809+ / Windows 11 x64（Intel、AMD）。使用独立晾衣绳图标，安装包携带仓库完整 MIT 许可。
 
 默认监听系统已知 Downloads 文件夹；可同时添加多个文件夹。完成检测要求至少两次稳定扫描、两秒静默，并过滤常见下载临时后缀。支持顶层文件/目录、拖入挂载、真实文件 copy-only 拖出、打开/图片缩略图、固定、保留扩展名重命名、悬停身份、最近文件搜索、自动隐藏/一直显示、中英文托盘与卡片菜单、手动检查 Windows 更新、开机启动开关及关于。
 
@@ -12,7 +12,7 @@
 
 ## 构建与验证
 
-在 Windows 安装 .NET 8 SDK 和 Inno Setup 6，运行：
+在 Windows 安装 .NET 10 LTS SDK 和 Inno Setup 6，运行：
 
 ```powershell
 ./scripts/build-windows.ps1

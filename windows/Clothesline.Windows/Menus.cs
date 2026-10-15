@@ -34,7 +34,7 @@ internal sealed partial class RopeWindow
                 else data.SetImage(System.Windows.Media.Imaging.BitmapFrame.Create(new Uri(file.Path)));
             }
             else data.SetFileDropList(new StringCollection { file.Path });
-            data.SetData(OwnCopy,true); Clipboard.SetDataObject(data,true); clipboardSequence=Native.GetClipboardSequenceNumber();
+            data.SetData(OwnCopy,new MemoryStream(new byte[] { 1 })); Clipboard.SetDataObject(data,true); clipboardSequence=Native.GetClipboardSequenceNumber();
         }));
         if (temporary)
         {

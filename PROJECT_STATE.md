@@ -139,6 +139,6 @@ GitHub fetch 两次 20 秒超时；保留此前未确认同步的提交，推送
 
 ## Windows 原生版本（2026-10-15，在验证）
 
-用户新增 Windows 支持范围。在 feature/windows-app 实现独立 WPF/.NET 8 x64 应用、文件完成检测及安全重命名核心、真实 copy-only 拖出、托盘和双语菜单、剪贴板默认 opt-in、当前用户登录启动、独立 Windows 更新标签；macOS 源码不变。新增 Windows CI、self-contained 发布及 Inno Setup 当前用户安装程序。Windows 首版主屏，暂不包含系统分享、废纸篓删除和全局快捷键，详见 windows/README.md。
+用户新增 Windows 支持范围。在 feature/windows-app 实现独立 WPF/.NET 10 LTS x64 应用、文件完成检测及安全重命名核心、真实 copy-only 拖出、托盘和双语菜单、剪贴板默认 opt-in、当前用户登录启动、独立 Windows 更新标签；macOS 源码不变。新增 Windows CI、self-contained 发布及 Inno Setup 当前用户安装程序。Windows 首版主屏，暂不包含系统分享、废纸篓删除和全局快捷键，详见 windows/README.md。
 
 当前提交用于 Windows runner 编译/自动验证，尚不宣称构建或 UI 通过。后续按 CI 结果修复后再提供可下载版本。

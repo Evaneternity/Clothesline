@@ -20,13 +20,16 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
       - name: Test, publish and build installer
         shell: pwsh
         run: ./scripts/build-windows.ps1
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: Clothesline-Windows-x64
-          path: build/windows/dist/*
+          path: |
+            build/windows/dist/*
+            build/windows/*test*.json
           if-no-files-found: error
           retention-days: 14

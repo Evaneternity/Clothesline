@@ -8,7 +8,8 @@ Run-DotNet -Arguments @('run','--project','windows/Clothesline.Tests','-c','Rele
 Run-DotNet -Arguments @('publish','windows/Clothesline.Windows','-c','Release','-r','win-x64','--self-contained','true','-p:PublishSingleFile=false','-o','build/windows/publish')
 $report = Join-Path $PWD 'build/windows/self-test.json'
 $process = Start-Process 'build/windows/publish/Clothesline.exe' -ArgumentList @('--self-test', ('"' + $report + '"')) -Wait -PassThru
-if ($process.ExitCode -ne 0 -or !(Test-Path $report)) { throw 'Windows app self-test failed' }
+if (Test-Path $report) { Get-Content $report }
+if ($process.ExitCode -ne 0 -or !(Test-Path $report)) { throw ('Windows app self-test failed; exit=' + $process.ExitCode) }
 Get-Content $report
 if (!(Get-Content $report | ConvertFrom-Json).passed) { throw 'Windows self-test report failed' }
 New-Item -ItemType Directory -Path 'build/windows/dist' -Force | Out-Null
