@@ -174,7 +174,7 @@ final class ClosureMenuItem: NSMenuItem {
     private let handler: () -> Void
     init(_ title: String, action: @escaping () -> Void) {
         handler = action
-        super.init(title: title, action: #selector(fire), keyEquivalent: "")
+        super.init(title: AppLanguage.translate(title), action: #selector(fire), keyEquivalent: "")
         target = self
     }
     required init(coder: NSCoder) { fatalError("init(coder:) not supported") }

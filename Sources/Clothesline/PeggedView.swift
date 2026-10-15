@@ -52,7 +52,7 @@ struct PeggedView: View {
                     }
                 }
             }
-            Text(item.noteText == nil ? item.url.lastPathComponent : "文字便签")
+            Text(item.noteText == nil ? item.url.lastPathComponent : AppLanguage.translate("文字便签"))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -78,7 +78,7 @@ struct PeggedView: View {
         }
         .overlay(alignment: .topTrailing) {
             if item.unavailable || item.pinned {
-                Label(item.unavailable ? "文件失效" : "已固定", systemImage: item.unavailable ? "exclamationmark.triangle.fill" : "pin.fill")
+                Label(AppLanguage.translate(item.unavailable ? "文件失效" : "已固定"), systemImage: item.unavailable ? "exclamationmark.triangle.fill" : "pin.fill")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(item.unavailable ? Color.red : Color.primary)
                     .padding(4).background(.regularMaterial, in: Capsule())
@@ -88,7 +88,7 @@ struct PeggedView: View {
         .overlay(GrabArea(item: item, line: line))
         .overlay(alignment: .bottom) {
             if line.copiedID == item.id {
-                Label(item.noteText == nil ? "已复制" : "已复制文字", systemImage: "checkmark")
+                Label(AppLanguage.translate(item.noteText == nil ? "已复制" : "已复制文字"), systemImage: "checkmark")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 10).padding(.vertical, 5)

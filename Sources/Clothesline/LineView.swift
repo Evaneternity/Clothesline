@@ -46,7 +46,7 @@ struct LineView: View {
             ZStack(alignment: .topLeading) {
                 Rope(width: width)
                 Button(action: line.showRecent) {
-                    Label("最近文件", systemImage: "tray.full")
+                    Label(AppLanguage.translate("最近文件"), systemImage: "tray.full")
                         .font(.system(size: 12)).padding(8)
                         .background(.regularMaterial, in: Capsule())
                 }
@@ -58,7 +58,7 @@ struct LineView: View {
                 .position(x: width - 70, y: Layout.panelHeight - 30)
                 .zIndex(2)
                 if line.items.isEmpty {
-                    Text("最新下载的文件会挂在这里")
+                    Text(AppLanguage.translate("最新下载的文件会挂在这里"))
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 12).padding(.vertical, 6)

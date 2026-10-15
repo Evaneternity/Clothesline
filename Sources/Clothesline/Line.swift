@@ -155,9 +155,12 @@ final class Line: ObservableObject {
     func identityDescription(_ item: Pegged) -> String {
         let fresh = try? DownloadIndex.read(item.url)
         let file = fresh ?? item.file
-        let size = file.isDirectory ? "文件夹（不递归计算大小）" : ByteCountFormatter.string(fromByteCount: file.size, countStyle: .file)
+        let size = file.isDirectory ? AppLanguage.translate("文件夹（不递归计算大小）") : ByteCountFormatter.string(fromByteCount: file.size, countStyle: .file)
         let date = DateFormatter(); date.dateStyle = .medium; date.timeStyle = .medium
-        let source = item.isClipboard ? "剪贴板（本次会话）" : file.url.deletingLastPathComponent().path
+        let source = item.isClipboard ? AppLanguage.translate("剪贴板（本次会话）") : file.url.deletingLastPathComponent().path
+        if AppLanguage.current == .english {
+            return "Name: \(item.noteText == nil ? file.url.lastPathComponent : "Text Note")\nSource: \(source)\nSize: \(size)\nCreated: \(date.string(from: file.created))\nModified: \(date.string(from: file.modified))" + (fresh == nil ? "\n⚠ Original missing or inaccessible; size and dates are last known values." : "")
+        }
         return "名称：\(item.noteText == nil ? file.url.lastPathComponent : "文字便签")\n来源：\(source)\n大小：\(size)\n创建：\(date.string(from: file.created))\n修改：\(date.string(from: file.modified))" +
             (fresh == nil ? "\n⚠ 源文件不存在或无法访问；大小和时间为最后记录。" : "")
     }
@@ -165,8 +168,8 @@ final class Line: ObservableObject {
         guard let item = items.first(where: { $0.id == id }) else { return false }
         guard (try? DownloadIndex.read(item.url)) != nil else {
             updateVisibleItems()
-            let alert = NSAlert(); alert.messageText = "源文件不存在或无法访问"
-            alert.informativeText = item.url.path + "\n请检查文件位置或访问权限；可取下失效卡片。"
+            let alert = NSAlert(); alert.messageText = AppLanguage.translate("源文件不存在或无法访问")
+            alert.informativeText = item.url.path + AppLanguage.text("\n请检查文件位置或访问权限；可取下失效卡片。", "\nCheck the file location or permissions; you can take down this card.")
             alert.runModal(); return false
         }
         return true
@@ -183,7 +186,7 @@ final class Line: ObservableObject {
             return
         }
         guard clipboardEntries.count < 100 else {
-            throw NSError(domain: "Clothesline", code: 7, userInfo: [NSLocalizedDescriptionKey: "本次会话已挂载 100 条剪贴板内容，请清空剪贴板挂载内容后重试。"])
+            throw NSError(domain: "Clothesline", code: 7, userInfo: [NSLocalizedDescriptionKey: AppLanguage.translate("本次会话已挂载 100 条剪贴板内容，请清空剪贴板挂载内容后重试。")])
         }
         if clipboardDirectory == nil {
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Clothesline-Clipboard-" + UUID().uuidString, isDirectory: true)
@@ -216,13 +219,13 @@ final class Line: ObservableObject {
         interactionHeld = true
         defer { interactionHeld = false }
         let alert = NSAlert()
-        alert.messageText = "文字便签"
+        alert.messageText = AppLanguage.translate("文字便签")
         let editor = NSTextView(frame: NSRect(x: 0, y: 0, width: 360, height: 220))
         editor.isRichText = false; editor.string = text
         let scroll = NSScrollView(frame: editor.frame)
         scroll.hasVerticalScroller = true; scroll.documentView = editor
         alert.accessoryView = scroll
-        alert.addButton(withTitle: "保存"); alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: AppLanguage.translate("保存")); alert.addButton(withTitle: AppLanguage.translate("取消"))
         alert.window.initialFirstResponder = editor
         NSApp.activate(ignoringOtherApps: true)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
@@ -234,7 +237,7 @@ final class Line: ObservableObject {
         guard let item = items.first(where: { $0.id == id }), item.noteText != nil,
               let index = clipboardEntries.firstIndex(where: { $0.url == item.url }) else { return }
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.utf8.count <= 200_000 else {
-            throw NSError(domain: "Clothesline", code: 6, userInfo: [NSLocalizedDescriptionKey: "便签不能为空，且需在 200 KB 以内。"])
+            throw NSError(domain: "Clothesline", code: 6, userInfo: [NSLocalizedDescriptionKey: AppLanguage.translate("便签不能为空，且需在 200 KB 以内。")])
         }
         try Data(text.utf8).write(to: item.url, options: .atomic)
         clipboardEntries[index].content = .text(text)
@@ -246,7 +249,7 @@ final class Line: ObservableObject {
         interactionHeld = true
         defer { interactionHeld = false }
         let picker = NSSavePanel()
-        picker.nameFieldStringValue = item.noteText != nil ? "便签.txt" : "剪贴板图片.png"
+        picker.nameFieldStringValue = item.noteText != nil ? AppLanguage.text("便签.txt", "Note.txt") : AppLanguage.text("剪贴板图片.png", "Clipboard.png")
         NSApp.activate(ignoringOtherApps: true)
         guard picker.runModal() == .OK, let destination = picker.url else { return }
         do { try Data(contentsOf: item.url).write(to: destination, options: .atomic) }
@@ -291,7 +294,7 @@ final class Line: ObservableObject {
     func attachFolder(_ url: URL) throws {
         guard let file = try DownloadIndex.read(url) else {
             throw NSError(domain: "Clothesline", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "请选择可访问的文件或文件夹。"])
+                          userInfo: [NSLocalizedDescriptionKey: AppLanguage.translate("请选择可访问的文件或文件夹。")])
         }
         if !attachedFolders.contains(where: { $0.standardizedFileURL.path == file.path }) {
             // Prepare persistence before changing the display. Normal bookmarks
@@ -329,17 +332,17 @@ final class Line: ObservableObject {
     func rename(_ id: UUID, stem: String) throws {
         guard let item = items.first(where: { $0.id == id }), !item.isClipboard,
               let fresh = try DownloadIndex.read(item.url), fresh.fingerprint == item.file.fingerprint else {
-            throw NSError(domain: "Clothesline", code: 3, userInfo: [NSLocalizedDescriptionKey: "文件已改变或不存在，请刷新后重试。"])
+            throw NSError(domain: "Clothesline", code: 3, userInfo: [NSLocalizedDescriptionKey: AppLanguage.translate("文件已改变或不存在，请刷新后重试。")])
         }
         let name = stem.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, !name.hasPrefix("."), !name.contains("/"), !name.contains(":"), !name.contains("\0") else {
-            throw NSError(domain: "Clothesline", code: 4, userInfo: [NSLocalizedDescriptionKey: "名称不能为空或包含 /、: 等无效字符。"])
+            throw NSError(domain: "Clothesline", code: 4, userInfo: [NSLocalizedDescriptionKey: AppLanguage.translate("名称不能为空或包含 /、: 等无效字符。")])
         }
         let ext = item.file.isDirectory ? "" : item.url.pathExtension
         let target = item.url.deletingLastPathComponent().appendingPathComponent(ext.isEmpty ? name : name + "." + ext)
         guard target.path != item.url.path else { return }
         guard !FileManager.default.fileExists(atPath: target.path) else {
-            throw NSError(domain: "Clothesline", code: 5, userInfo: [NSLocalizedDescriptionKey: "同名文件已存在，请使用其他名称。不会覆盖原文件。"])
+            throw NSError(domain: "Clothesline", code: 5, userInfo: [NSLocalizedDescriptionKey: AppLanguage.translate("同名文件已存在，请使用其他名称。不会覆盖原文件。")])
         }
         try FileManager.default.moveItem(at: item.url, to: target)
         items.removeAll { $0.id == id }
@@ -363,13 +366,13 @@ final class Line: ObservableObject {
         interactionHeld = true
         defer { interactionHeld = false }
         let alert = NSAlert()
-        alert.messageText = "重命名“\(item.url.lastPathComponent)”"
-        alert.informativeText = "修改原文件名称，文件扩展名保持不变。"
+        alert.messageText = AppLanguage.text("重命名“\(item.url.lastPathComponent)”", "Rename ‘\(item.url.lastPathComponent)’")
+        alert.informativeText = AppLanguage.translate("修改原文件名称，文件扩展名保持不变。")
         let field = NSTextField(string: item.file.isDirectory || item.url.pathExtension.isEmpty
             ? item.url.lastPathComponent : item.url.deletingPathExtension().lastPathComponent)
         field.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
         alert.accessoryView = field
-        alert.addButton(withTitle: "重命名"); alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: AppLanguage.translate("重命名")); alert.addButton(withTitle: AppLanguage.translate("取消"))
         NSApp.activate(ignoringOtherApps: true)
         alert.window.initialFirstResponder = field
         guard alert.runModal() == .alertFirstButtonReturn else { return }
@@ -391,7 +394,7 @@ final class Line: ObservableObject {
               let current = try DownloadIndex.read(item.url),
               current.fingerprint == item.file.fingerprint else {
             throw NSError(domain: "Clothesline", code: 2,
-                          userInfo: [NSLocalizedDescriptionKey: "文件已改变或不存在，请等待刷新后重试。"])
+                          userInfo: [NSLocalizedDescriptionKey: AppLanguage.translate("文件已改变或不存在，请等待刷新后重试。")])
         }
         var result: NSURL?
         try FileManager.default.trashItem(at: item.url, resultingItemURL: &result)
@@ -409,13 +412,13 @@ final class Line: ObservableObject {
     func requestTrash(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
         let alert = NSAlert()
-        alert.messageText = "将“\(item.url.lastPathComponent)”移到废纸篓？"
+        alert.messageText = AppLanguage.text("将“\(item.url.lastPathComponent)”移到废纸篓？", "Move ‘\(item.url.lastPathComponent)’ to Trash?")
         alert.informativeText = item.file.isDirectory
-            ? "文件夹及其内容会从原位置移到废纸篓，可在 Finder 中恢复。若只想隐藏卡片，请选择“从晾衣绳取下”。"
-            : "原文件会移到废纸篓，可在 Finder 中恢复。若只想隐藏卡片，请选择“从晾衣绳取下”。"
+            ? AppLanguage.translate("文件夹及其内容会从原位置移到废纸篓，可在 Finder 中恢复。若只想隐藏卡片，请选择“从晾衣绳取下”。")
+            : AppLanguage.translate("原文件会移到废纸篓，可在 Finder 中恢复。若只想隐藏卡片，请选择“从晾衣绳取下”。")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "取消")
-        alert.addButton(withTitle: "移到废纸篓")
+        alert.addButton(withTitle: AppLanguage.translate("取消"))
+        alert.addButton(withTitle: AppLanguage.translate("移到废纸篓"))
         NSApp.activate(ignoringOtherApps: true)
         guard alert.runModal() == .alertSecondButtonReturn else { return }
         do { try moveToTrash(id) }

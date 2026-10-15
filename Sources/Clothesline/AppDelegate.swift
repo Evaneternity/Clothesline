@@ -6,6 +6,8 @@ import ServiceManagement
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let line = Line()
+    private let loginItems = LoginItems()
+    private let updateChecker = UpdateChecker()
     private let identityPanel = FileIdentityPanel()
     private var panel: LinePanel!
     private var statusItem: NSStatusItem!
@@ -76,8 +78,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         picker.canChooseFiles = false
         picker.canChooseDirectories = true
         picker.allowsMultipleSelection = true
-        picker.prompt = "添加监控文件夹"
-        picker.message = "新文件夹与 Downloads 同时监控，不会替换已有监控。"
+        picker.prompt = AppLanguage.translate("添加监控文件夹")
+        picker.message = AppLanguage.translate("新文件夹与 Downloads 同时监控，不会替换已有监控。")
         picker.directoryURL = FolderMonitors.downloads
         NSApp.activate(ignoringOtherApps: true)
         guard picker.runModal() == .OK else { return }
@@ -160,8 +162,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         picker.canChooseFiles = true
         picker.canChooseDirectories = true
         picker.allowsMultipleSelection = true
-        picker.prompt = "挂上晾衣绳"
-        picker.message = "挂上文件或文件夹快捷入口，保留在原位置。Downloads 监听仍然继续。"
+        picker.prompt = AppLanguage.translate("挂上晾衣绳")
+        picker.message = AppLanguage.translate("挂上文件或文件夹快捷入口，保留在原位置。Downloads 监听仍然继续。")
         NSApp.activate(ignoringOtherApps: true)
         guard picker.runModal() == .OK else { return }
         for url in picker.urls {
@@ -173,11 +175,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // Dynamic menu. No app menu or Dock icon is required.
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        let header = NSMenuItem(title: "晾衣绳 · Clothesline", action: nil, keyEquivalent: "")
+        let header = NSMenuItem(title: AppLanguage.translate("晾衣绳 · Clothesline"), action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
         for folder in monitors?.folders ?? [] {
-            let name = NSMenuItem(title: "监控：\(folder.lastPathComponent)", action: nil, keyEquivalent: "")
+            let name = NSMenuItem(title: AppLanguage.text("监控：\(folder.lastPathComponent)", "Watching: \(folder.lastPathComponent)"), action: nil, keyEquivalent: "")
             name.isEnabled = false
             name.toolTip = folder.path
             menu.addItem(name)
@@ -198,7 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(ClosureMenuItem("最近文件…") { [weak self] in
             guard let self else { return }; self.recentDrawer.show(line: self.line)
         })
-        let clipboardMenu = NSMenu(title: "剪贴板挂载")
+        let clipboardMenu = NSMenu(title: AppLanguage.translate("剪贴板挂载"))
         let images = ClosureMenuItem("自动挂上图片 / 截图") { [weak self] in
             guard let self else { return }
             self.clipboard?.setImagesEnabled(!(self.clipboard?.imagesEnabled ?? false))
@@ -219,7 +221,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let errorItem = NSMenuItem(title: "⚠ \(failure)", action: nil, keyEquivalent: "")
             errorItem.isEnabled = false; clipboardMenu.addItem(errorItem)
         }
-        let clipboardItem = NSMenuItem(title: "剪贴板挂载", action: nil, keyEquivalent: "")
+        let clipboardItem = NSMenuItem(title: AppLanguage.translate("剪贴板挂载"), action: nil, keyEquivalent: "")
         clipboardItem.submenu = clipboardMenu
         menu.addItem(clipboardItem)
         menu.addItem(ClosureMenuItem("打开下载文件夹") {
@@ -228,9 +230,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(ClosureMenuItem("添加监控文件夹…") { [weak self] in self?.addMonitoredFolders() })
         menu.addItem(.separator())
 
-        let keepSubmenu = NSMenu(title: "保留文件数量")
+        let keepSubmenu = NSMenu(title: AppLanguage.translate("保留文件数量"))
         for choice in [0, 25, 50, 100] {
-            let title = choice == 0 ? "屏幕可容纳数量" : "\(choice) 个文件"
+            let title = choice == 0 ? "屏幕可容纳数量" : AppLanguage.text("\(choice) 个文件", "\(choice) items")
             let item = ClosureMenuItem(title) { [weak self] in
                 Line.keepOnLine = choice == 0 ? nil : choice
                 self?.recalculateCapacity()
@@ -238,11 +240,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.state = (Line.keepOnLine ?? 0) == choice ? .on : .off
             keepSubmenu.addItem(item)
         }
-        let keepItem = NSMenuItem(title: "保留文件数量", action: nil, keyEquivalent: "")
+        let keepItem = NSMenuItem(title: AppLanguage.translate("保留文件数量"), action: nil, keyEquivalent: "")
         keepItem.submenu = keepSubmenu
         menu.addItem(keepItem)
 
-        let sizeSubmenu = NSMenu(title: "卡片尺寸")
+        let sizeSubmenu = NSMenu(title: AppLanguage.translate("卡片尺寸"))
         for size in Layout.Size.allCases {
             let title: String
             switch size { case .small: title = "小"; case .medium: title = "中"; case .large: title = "大" }
@@ -254,7 +256,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.state = Layout.size == size ? .on : .off
             sizeSubmenu.addItem(item)
         }
-        let sizeItem = NSMenuItem(title: "卡片尺寸", action: nil, keyEquivalent: "")
+        let sizeItem = NSMenuItem(title: AppLanguage.translate("卡片尺寸"), action: nil, keyEquivalent: "")
         sizeItem.submenu = sizeSubmenu
         menu.addItem(sizeItem)
 
@@ -262,10 +264,89 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(ClosureMenuItem("清空晾衣绳（不删除文件）") { [weak self] in self?.line.dismissAll() })
         menu.addItem(ClosureMenuItem("重新显示已取下的文件") { [weak self] in self?.line.resetDismissed() })
         menu.addItem(.separator())
-        let hotkey = NSMenuItem(title: "快捷键：⌃⌥T", action: nil, keyEquivalent: "")
+        let hotkey = NSMenuItem(title: AppLanguage.translate("快捷键：⌃⌥T"), action: nil, keyEquivalent: "")
         hotkey.isEnabled = false
         menu.addItem(hotkey)
+        menu.addItem(.separator())
+        let login = ClosureMenuItem("开机启动") { [weak self] in self?.toggleLoginItem() }
+        switch loginItems.status {
+        case .enabled: login.state = .on
+        case .requiresApproval: login.state = .mixed
+        default: login.state = .off
+        }
+        menu.addItem(login)
+        if loginItems.status == .requiresApproval {
+            menu.addItem(ClosureMenuItem("在系统设置中允许开机启动…") { SMAppService.openSystemSettingsLoginItems() })
+        }
+        let updates = ClosureMenuItem(updateChecker.checking ? "正在检查更新…" : "检查更新…") { [weak self] in
+            self?.updateChecker.check()
+        }
+        updates.isEnabled = !updateChecker.checking
+        menu.addItem(updates)
+        menu.addItem(ClosureMenuItem("关于 Clothesline…") { [weak self] in self?.showAbout() })
+        let languages = NSMenu(title: "Language")
+        for language in AppLanguage.allCases {
+            let item = ClosureMenuItem(language == .chinese ? "简体中文" : "English") { [weak self] in
+                AppLanguage.current = language
+                self?.line.objectWillChange.send()
+                self?.recentDrawer.refreshLanguage()
+            }
+            item.state = AppLanguage.current == language ? .on : .off
+            languages.addItem(item)
+        }
+        let languageItem = NSMenuItem(title: AppLanguage.translate("语言 / Language"), action: nil, keyEquivalent: "")
+        languageItem.submenu = languages
+        menu.addItem(languageItem)
+        menu.addItem(.separator())
         menu.addItem(ClosureMenuItem("退出 Clothesline") { NSApp.terminate(nil) })
+    }
+
+    private func toggleLoginItem() {
+        do {
+            try loginItems.toggle()
+            if loginItems.status == .requiresApproval {
+                let alert = NSAlert()
+                alert.messageText = AppLanguage.text("请允许开机启动", "Allow Launch at Login")
+                alert.informativeText = AppLanguage.text("请在系统设置 → 通用 → 登录项中允许 Clothesline。", "Allow Clothesline in System Settings → General → Login Items.")
+                alert.addButton(withTitle: AppLanguage.text("打开系统设置", "Open System Settings"))
+                alert.addButton(withTitle: AppLanguage.text("稍后", "Later"))
+                NSApp.activate(ignoringOtherApps: true)
+                if alert.runModal() == .alertFirstButtonReturn { SMAppService.openSystemSettingsLoginItems() }
+            }
+        } catch {
+            let alert = NSAlert(error: error)
+            alert.messageText = AppLanguage.text("无法更改开机启动", "Unable to Change Launch at Login")
+            alert.informativeText += AppLanguage.text("\n请将应用安装到‘应用程序’文件夹后重试。", "\nInstall the app in Applications and try again.")
+            NSApp.activate(ignoringOtherApps: true); alert.runModal()
+        }
+    }
+
+    private func showAbout() {
+        let alert = NSAlert()
+        alert.messageText = "Clothesline · 晾衣绳"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        alert.informativeText = AppLanguage.text("版本", "Version") + " " + UpdateChecker.currentVersion + " (" + build + ")\n\n" +
+            AppLanguage.text("把常用文件、文件夹和剪贴板内容挂在屏幕顶部，随手预览、拖拽和使用。", "Keep files, folders, and clipboard items at the top of your screen for quick preview, drag and drop, and reuse.")
+        alert.addButton(withTitle: AppLanguage.text("关闭", "Close"))
+        alert.addButton(withTitle: "GitHub")
+        alert.addButton(withTitle: AppLanguage.text("版权与许可", "Credits & License"))
+        NSApp.activate(ignoringOtherApps: true)
+        let result = alert.runModal()
+        if result == .alertSecondButtonReturn { NSWorkspace.shared.open(UpdateChecker.repository) }
+        if result == .alertThirdButtonReturn {
+            let license = NSAlert()
+            license.messageText = AppLanguage.text("版权与许可", "Credits & License")
+            let content = Bundle.main.url(forResource: "LICENSE", withExtension: nil)
+                .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+                ?? AppLanguage.text("请查看项目仓库中的 LICENSE。", "See LICENSE in the project repository.")
+            let text = NSTextView(frame: NSRect(x: 0, y: 0, width: 460, height: 280))
+            text.isEditable = false; text.string = content
+            let scroll = NSScrollView(frame: text.frame)
+            scroll.hasVerticalScroller = true; scroll.documentView = text
+            license.accessoryView = scroll
+            license.addButton(withTitle: AppLanguage.text("好", "OK"))
+            license.runModal()
+        }
     }
 
     // Quick Look delegates are asked through the application responder chain.

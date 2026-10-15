@@ -26,7 +26,7 @@ Requires macOS 14+ and an Apple Silicon Mac. This release does not include an In
 
 The candidate uses ad-hoc signing and has not been signed with Developer ID or notarized by Apple. macOS may block the first launch. Verify that you downloaded it from this repository, then follow the system's Privacy & Security instructions to allow opening it.
 
-The application interface currently uses Chinese. This English page translates the documentation, not the application interface.
+Choose **Language / 语言 → English** in the menu to switch the application menus. The choice is saved. System dialogs and errors may follow your macOS language.
 
 ## New workflows (development source)
 
@@ -96,9 +96,9 @@ macOS may request folder access. If watching fails, use the T-shirt menu bar ico
 - Removing cards, clearing the clothesline, or quitting does not delete, move, or overwrite original files. Only the separately confirmed Trash action moves originals. No permanent deletion is provided; folders move with all their contents.
 - Download completion is heuristic. A download paused for more than two seconds under its final filename without a companion temporary file may appear early.
 - Watching is limited to top-level items and does not recursively monitor folder contents. Folder stability does not guarantee every contained file has finished writing.
-- Preferences, folder bookmarks, and hidden-item records are stored locally. The app has no network logic, telemetry, accounts, or screenshot capture. Clipboard content is read only for explicitly enabled types.
+- Preferences, folder bookmarks, and hidden-item records are stored locally. The app connects to GitHub only when you choose Check for Updates; files and clipboard content are never uploaded. There is no telemetry, account, or screenshot capture. Clipboard content is read only for explicitly enabled types.
 - Integration tests verify real directory events, file URLs, safe removal, Trash recovery, multiple watchers, bookmark restoration, and drag payloads. Actual receiving-app drag behavior, full UI interactions, browser downloads, permission denial, sleep, multiple displays, and macOS 14 compatibility still require manual acceptance.
-- Developer ID notarization, automatic updates, launch at login, full accessibility, and additional application languages are not included.
+- Developer ID notarization, automatic installation of updates, and full accessibility are not included.
 
 ## Copyright and origin
 
@@ -107,3 +107,12 @@ Tendedero source code is published under MIT by Alejandro Buján. Clothesline ad
 ## Ongoing development
 
 Development follows [AGENTS.md](AGENTS.md). Each iteration updates [PROJECT_STATE.md](PROJECT_STATE.md), [HANDOFF_LATEST.md](HANDOFF_LATEST.md), and [CHANGELOG.md](CHANGELOG.md). Verified changes are committed and pushed to this public repository without force-pushing. See [ROADMAP.md](ROADMAP.md) for pending acceptance work.
+
+## Application Menu
+
+- **Launch at Login** toggles the macOS login item and shows its actual status. If approval is needed, use the System Settings entry. Install in Applications before enabling it.
+- **Check for Updates…** checks published GitHub versions only when clicked and opens the release page if a newer version exists. It does not install updates. Candidate builds include candidate and stable releases; stable builds include stable releases only.
+- **About Clothesline…** shows the version, repository, and bundled MIT license.
+- **Language / 语言** switches Simplified Chinese and English menus, card context menus, and recent files UI, preserving the choice across launches.
+
+The local development build is `0.1.0-rc.3` (build 3), not yet released. The existing rc.2 DMG does not include these additions.

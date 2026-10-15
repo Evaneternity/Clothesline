@@ -6,7 +6,7 @@ struct MacIntegrationTests {
     @MainActor static func main() throws {
         _ = NSApplication.shared
         let defaults = UserDefaults.standard
-        let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine", "recentFileBookmarks", "pinnedFiles"]
+        let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine", "recentFileBookmarks", "pinnedFiles", "menuLanguage"]
         let saved = keys.map { defaults.object(forKey: $0) }
         for key in keys { defaults.removeObject(forKey: key) }
         defer {
@@ -15,6 +15,8 @@ struct MacIntegrationTests {
                 else { defaults.removeObject(forKey: key) }
             }
         }
+        AppLanguage.current = .chinese
+        try testAppServices()
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Clothesline-acceptance-\(UUID())")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
