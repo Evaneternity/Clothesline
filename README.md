@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
 **[下载演示视频（MP4，约 4 MB）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.1/Clothesline-demo.mp4)**
 
-最新 rc.2 安装包已包含录屏中的彩色夹子。
+rc.3 通用候选安装包包含录屏中的彩色夹子和后续功能更新。
 
 ## 新增工作流（源码开发版）
 
@@ -34,7 +34,7 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 - 绳上“最近文件”或菜单“最近文件…”打开可搜索窗口，保存最多 200 个近期文件入口；可重新挂上取下的文件，也可拖出。删除或无法访问的源文件不显示。
 - 卡片右键“分享…”调用 macOS 系统分享菜单，可用服务取决于系统与已安装应用。
 
-上述新增功能已在源码和本地构建中提供，GitHub rc.2 DMG 仍为上一候选版本；完整鼠标交互与实际 AirDrop/邮件分享待人工验收。
+上述新增功能包含在 rc.3 通用候选安装包；完整鼠标交互与实际 AirDrop/邮件分享待人工验收。
 
 ## 功能（V0.1）
 
@@ -57,9 +57,9 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
 ## 下载安装（V0.1 候选版）
 
-[下载 Clothesline DMG（Apple Silicon）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.2/Clothesline-0.1.0-rc.2-arm64.dmg) · [发行说明和 SHA-256 校验文件](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.2)
+[下载 Clothesline DMG（Intel / Apple Silicon 通用）](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.3/Clothesline-0.1.0-rc.3-universal.dmg) · [发行说明和 SHA-256 校验文件](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3)
 
-要求 macOS 14+、Apple Silicon（M 系列）；本次不提供 Intel 安装包。打开 DMG，将 Clothesline.app 拖到 Applications，再打开应用。当前仅 ad-hoc 签名，未 Developer ID 签名/公证；macOS 可能阻止首次运行，请确认来自本仓库后，按系统“隐私与安全性”的提示允许打开。
+要求 macOS 14+，支持 Intel（x86_64）和 Apple Silicon（M 系列，arm64）。同一个 Universal 安装包包含两种原生架构；Intel 真机与 macOS 14 最低版本仍待验收。打开 DMG，将 Clothesline.app 拖到 Applications，再打开应用。当前仅 ad-hoc 签名，未 Developer ID 签名/公证；macOS 可能阻止首次运行，请确认来自本仓库后，按系统“隐私与安全性”的提示允许打开。
 
 默认监控 Downloads。菜单“添加监控文件夹…”可以一次选择多个目录，原监控继续运行；添加列表重启后保留。旧版本自选监控目录会保留，同时补回默认 Downloads。菜单列出所有目录及各自错误。 “挂上文件夹…”仅添加目录快捷入口，与持续监控内容不同。
 
@@ -76,7 +76,7 @@ scripts/build-app.sh
 open build/Clothesline.app
 ```
 
-构建脚本默认使用本机架构（Apple Silicon 或 Intel）、`release` 配置，并进行本机 **ad-hoc 签名**，无需开发者证书。若需要 Debug 构建：`scripts/build-app.sh debug`。
+构建脚本默认编译 arm64 / x86_64 并合并 Universal，使用 `release` 配置，进行 **ad-hoc 签名**，无需开发者证书。Debug 构建：`scripts/build-app.sh debug`。第二个参数可选 `native`、`arm64` 或 `x86_64`，用于单架构构建。
 
 第一次读取 Downloads 时，macOS 可能要求授权。若自动权限没有弹出或监听失败，请点击菜单栏的 Clothesline T 恤图标 → **添加监控文件夹…** → 选择 Downloads。自选文件夹采用 security-scoped bookmark（能够使用时）保留访问权限。重新构建后，macOS 可能重新请求授权。
 
@@ -89,7 +89,7 @@ open build/Clothesline.app
 - **关于 Clothesline…**：查看版本、项目主页和随应用携带的 MIT 许可。
 - **语言 / Language**：切换简体中文、English，选择保留到下次启动。菜单、卡片右键菜单和近期文件界面随之切换；系统窗口及错误信息可能遵循系统语言。
 
-本地开发构建为 `0.1.0-rc.3`（build 3），尚未发行；GitHub 现有 rc.2 安装包不包含这些新菜单。
+rc.3 通用候选包为 `0.1.0-rc.3`（build 3），包含上述新菜单。
 
 ## 操作速查
 
@@ -157,4 +157,4 @@ Tendedero 源码由 Alejandro Buján 按 MIT 发布；本项目借鉴并改写�
 
 遵循 AGENTS.md，每轮更新 PROJECT_STATE.md、HANDOFF_LATEST.md、CHANGELOG.md 并提交 Git。运行 scripts/test-core.sh、scripts/test-macos.sh 和 scripts/build-app.sh release。GitHub 公开仓库：https://github.com/zhongguozhang/Clothesline。每轮验证、更新交接、提交后推送；开始工作先检查远端变化，禁止强制推送。
 
-DMG 重建：`scripts/build-dmg.sh`（本机架构构建，当前发行包为 arm64）。
+DMG 重建：`scripts/build-dmg.sh`（默认 Universal，支持 Intel / Apple Silicon；可选参数 `native`、`arm64` 或 `x86_64`）。

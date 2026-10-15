@@ -12,7 +12,7 @@ It watches Downloads by default. Add more watched folders or hang frequently use
 
 ## Demo
 
-A 36-second recording showing file cards and colorful clothespins. The latest rc.2 installer includes the colorful clothespins.
+A 36-second recording showing file cards and colorful clothespins. The rc.3 universal candidate includes the colorful clothespins and subsequent updates.
 
 https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
@@ -20,9 +20,9 @@ https://github.com/user-attachments/assets/aab83014-934a-43c0-bc72-8055df02e67b
 
 ## Download and install
 
-[Download DMG for Apple Silicon](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.2/Clothesline-0.1.0-rc.2-arm64.dmg) · [Release notes and SHA-256 checksum](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.2)
+[Download Universal DMG (Intel / Apple Silicon)](https://github.com/zhongguozhang/Clothesline/releases/download/v0.1.0-rc.3/Clothesline-0.1.0-rc.3-universal.dmg) · [Release notes and SHA-256 checksum](https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3)
 
-Requires macOS 14+ and an Apple Silicon Mac. This release does not include an Intel installer. Open the DMG, drag Clothesline.app into Applications, and launch it.
+Requires macOS 14+. One Universal DMG contains native Intel (x86_64) and Apple Silicon (arm64) executables. Intel hardware and the macOS 14 minimum remain to be tested. Open the DMG, drag Clothesline.app into Applications, and launch it.
 
 The candidate uses ad-hoc signing and has not been signed with Developer ID or notarized by Apple. macOS may block the first launch. Verify that you downloaded it from this repository, then follow the system's Privacy & Security instructions to allow opening it.
 
@@ -42,7 +42,7 @@ Choose **Language / 语言 → English** in the menu to switch the application m
 - Open Recent Files from the rope or menu to search up to 200 persistent recent file references, drag them out, or hang them again. Missing/inaccessible originals are omitted.
 - Right-click → Share opens the macOS share picker. Available services depend on your system and installed apps.
 
-These additions are in source and the local build; the rc.2 DMG remains the preceding candidate. End-to-end mouse interaction and actual sharing require manual acceptance.
+These additions are included in the rc.3 universal candidate. End-to-end mouse interaction and actual sharing require manual acceptance.
 
 ## Features
 
@@ -115,4 +115,6 @@ Development follows [AGENTS.md](AGENTS.md). Each iteration updates [PROJECT_STAT
 - **About Clothesline…** shows the version, repository, and bundled MIT license.
 - **Language / 语言** switches Simplified Chinese and English menus, card context menus, and recent files UI, preserving the choice across launches.
 
-The local development build is `0.1.0-rc.3` (build 3), not yet released. The existing rc.2 DMG does not include these additions.
+The rc.3 universal candidate is `0.1.0-rc.3` (build 3) and includes these additions.
+
+Build a Universal DMG with `scripts/build-dmg.sh`. Optional targets: `native`, `arm64`, or `x86_64`. App builds use `scripts/build-app.sh release [universal|native|arm64|x86_64]`.

@@ -1,13 +1,11 @@
-# 最新交接：应用菜单与双语界面
+# 最新交接：Intel / Apple Silicon 通用安装包
 
-2026-10-15。用户要求开机启动、检查更新、关于、中英文菜单切换。
+2026-10-15。用户要求安装包增加 Intel 支持，使用 feature/universal-installer 分支完善打包。
 
-在 feature/app-menu-settings 开发。AppServices.swift 包含登录项服务封装、语义版本与 GitHub 发布筛选、手动更新检查；AppLanguage.swift 提供持久语言选择与 UI 翻译。AppDelegate 动态菜单显示系统实际登录状态，待批准时可打开系统设置；不在启动时注册。关于显示完整随包 MIT 许可。主菜单、卡片右键、近期文件和身份/文件操作提示已联动。
+build-app 默认 arm64、x86_64 分别 SwiftPM 编译，lipo 合并后统一签名，保留单架构选项。build-dmg 从应用元数据读取版本并按实际架构命名。双语 README 下载改为 rc.3 Universal。当前版本 0.1.0-rc.3 / build 3，包含上轮应用菜单功能。
 
-检查更新仅由点击触发，匿名访问本仓库 GitHub Releases，15/20 秒超时，无缓存或持久 Cookie，不发送文件/剪贴板。候选版包含候选和正式版，正式版仅正式；过滤草稿与外部下载页；打开发布页，不自动下载安装。应用版本标记 0.1.0-rc.3 / build 3，未发行，不改变已有 rc.2 DMG。
+验证：scripts/test-macos.sh、scripts/build-dmg.sh（包含核心及双架构 release 编译）、hdiutil verify 通过。只读挂载后核对 app 双架构、codesign --verify --strict --all-architectures、两架构 LC_BUILD_VERSION minos 14.0、MIT 全文及 Applications 链接，SHA-256 匹配。无可用 Rosetta，未修改系统安装它，不能把交叉编译写作 Intel 真机验收。旧式 PB/CoreDrag/颜色空间测试诊断仍非失败。
 
-验证：scripts/test-macos.sh 新增 Tests/AppServicesTests.swift，使用假登录服务验证开关/失败，不修改实际系统登录项；验证版本排序、候选过滤、草稿和 URL 筛选、真实 NSMenu 动作及语言保存。既有 macOS、scripts/test-core.sh（build-app 包含）、scripts/build-app.sh release 通过；最终 git diff --check、codesign --verify --strict。既有 CoreDrag/旧式 PB/颜色空间诊断非失败。未把自动回归当作完整 UI 验收。
+产物：build/Clothesline-0.1.0-rc.3-universal.dmg 及 .sha256。SHA-256：b6fa0e10482d20958b8a4294757913f0e3d0a37d5412f72074d915f0af4186cd。仍为 ad-hoc 签名、未公证候选版。
 
-下一步：安装到 Applications 后手动验收实际登录启动/关闭、网络检查更新、关于与语言；等待用户授权发行新版 DMG。开发完成后快进合并 main 并推送、核对 SHA。fetch 两次 20 秒超时；此前本地菜单精简提交一并保留待推送。
-
-同步记录（2026-10-15）：功能提交 e59b4ae 已从 feature/app-menu-settings 快进合并到本地 main。首次双分支推送 40 秒超时，远端接收尚未确认；需重试并比对 SHA，不能宣称已同步。
+下一步：提交、快进合并 main，推送此前未同步提交；发布 rc.3 候选版及 DMG/校验文件并核对资产。Intel 真机、macOS 14 最低版本、实际登录启动等 UI 验收仍待进行。发布/同步结果另行追加。

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build locally on a Mac running macOS 14+. Requires Apple's Swift toolchain.
-# Usage: scripts/build-app.sh [debug|release]
+# Usage: scripts/build-app.sh [debug|release] [universal|native|arm64|x86_64]
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-$PWD/.build/ModuleCache}"
@@ -12,29 +12,46 @@ fi
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "The graphical macOS app must be built on macOS (Darwin)." >&2; exit 2
 fi
+TARGET="${2:-universal}"
+case "$TARGET" in
+  universal) ARCHITECTURES=(arm64 x86_64) ;;
+  native) ARCHITECTURES=("$(uname -m)") ;;
+  arm64|x86_64) ARCHITECTURES=("$TARGET") ;;
+  *) echo "Expected universal, native, arm64, or x86_64" >&2; exit 2 ;;
+esac
 scripts/test-core.sh
-if ! swift build -c "$CONFIG"; then
-  # On some CLT-only macOS 27 installations SwiftUI SDK macro plugins may be
-  # absent; try Apple's installed macOS 26 SDK as in the upstream build notes.
-  if [[ -z "${SDKROOT:-}" ]]; then
-    FALLBACK="$(ls -d /Library/Developer/CommandLineTools/SDKs/MacOSX26*.sdk 2>/dev/null | sort -V | tail -1 || true)"
-    if [[ -n "$FALLBACK" ]]; then
-      export SDKROOT="$FALLBACK"
-      echo "Retrying build with $FALLBACK" >&2
-      swift build -c "$CONFIG"
+BINARIES=()
+for ARCH in "${ARCHITECTURES[@]}"; do
+  if ! swift build -c "$CONFIG" --arch "$ARCH"; then
+    # On some CLT-only macOS 27 installations SwiftUI SDK macro plugins may be
+    # absent; try Apple's installed macOS 26 SDK as in the upstream build notes.
+    if [[ -z "${SDKROOT:-}" ]]; then
+      FALLBACK="$(ls -d /Library/Developer/CommandLineTools/SDKs/MacOSX26*.sdk 2>/dev/null | sort -V | tail -1 || true)"
+      if [[ -n "$FALLBACK" ]]; then
+        export SDKROOT="$FALLBACK"
+        echo "Retrying build with $FALLBACK" >&2
+        swift build -c "$CONFIG" --arch "$ARCH"
+      else
+        echo "Please install full Xcode and retry." >&2
+        exit 1
+      fi
     else
-      echo "Please install full Xcode and retry." >&2
       exit 1
     fi
-  else
-    exit 1
   fi
-fi
-BINDIR="$(swift build -c "$CONFIG" --show-bin-path)"
+  BINDIR="$(swift build -c "$CONFIG" --arch "$ARCH" --show-bin-path)"
+  xcrun lipo "$BINDIR/Clothesline" -verify_arch "$ARCH"
+  BINARIES+=("$BINDIR/Clothesline")
+done
 APP="build/Clothesline.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BINDIR/Clothesline" "$APP/Contents/MacOS/Clothesline"
+if [[ "${#BINARIES[@]}" -gt 1 ]]; then
+  xcrun lipo -create "${BINARIES[@]}" -output "$APP/Contents/MacOS/Clothesline"
+else
+  cp "${BINARIES[0]}" "$APP/Contents/MacOS/Clothesline"
+fi
+xcrun lipo "$APP/Contents/MacOS/Clothesline" -verify_arch "${ARCHITECTURES[@]}"
 cp LICENSE "$APP/Contents/Resources/LICENSE"
 
 # Generate an original Clothesline icon from a PNG bundled with this project.
@@ -76,4 +93,6 @@ if [[ -n "$IDENTITY" ]]; then
 else
   codesign --force --sign - "$APP" >/dev/null
 fi
+codesign --verify --strict "$APP"
+xcrun lipo -archs "$APP/Contents/MacOS/Clothesline"
 printf '\nBuilt %s\nLaunch with: open %s\n' "$APP" "$APP"

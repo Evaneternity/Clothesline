@@ -126,3 +126,11 @@ GitHub 同步待确认（2026-10-15）：菜单改动已提交 e1d61b2；fetch �
 GitHub fetch 两次 20 秒超时；保留此前未确认同步的提交，推送必须核验 SHA。
 
 同步记录（2026-10-15）：功能提交 e59b4ae 已从 feature/app-menu-settings 快进合并到本地 main。首次双分支推送 40 秒超时，远端接收尚未确认；需重试并比对 SHA，不能宣称已同步。
+
+## Universal 安装包（2026-10-15）
+
+按用户要求增加 Intel 支持。build-app 默认分别编译 arm64 / x86_64，经 lipo 合并后签名；支持 universal / native / arm64 / x86_64 参数。build-dmg 从应用元数据读取版本并按实际架构命名，不再硬编码 rc.2 或按宿主机推断架构。rc.3 / build 3 包含当前所有功能。
+
+核心、macOS 回归、双架构 release 编译通过。DMG hdiutil verify、只读挂载通过；两种架构 codesign --verify --strict --all-architectures、lipo、otool minos 14.0、随包 MIT、Applications 链接、SHA-256 均核对。宿主机 Apple Silicon，无可用 Rosetta（x86_64 true 返回 Bad CPU type）；未安装 Rosetta，不宣称 Intel 真机或 macOS 14 最低版本已验收。
+
+产物 build/Clothesline-0.1.0-rc.3-universal.dmg，SHA-256 b6fa0e10482d20958b8a4294757913f0e3d0a37d5412f72074d915f0af4186cd。准备上传 GitHub 候选版，发布结果随后记录；仍为 ad-hoc 签名，未 Apple 公证。
