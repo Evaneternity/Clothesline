@@ -9,3 +9,5 @@
 验证：scripts/test-macos.sh 新增 Tests/AppServicesTests.swift，使用假登录服务验证开关/失败，不修改实际系统登录项；验证版本排序、候选过滤、草稿和 URL 筛选、真实 NSMenu 动作及语言保存。既有 macOS、scripts/test-core.sh（build-app 包含）、scripts/build-app.sh release 通过；最终 git diff --check、codesign --verify --strict。既有 CoreDrag/旧式 PB/颜色空间诊断非失败。未把自动回归当作完整 UI 验收。
 
 下一步：安装到 Applications 后手动验收实际登录启动/关闭、网络检查更新、关于与语言；等待用户授权发行新版 DMG。开发完成后快进合并 main 并推送、核对 SHA。fetch 两次 20 秒超时；此前本地菜单精简提交一并保留待推送。
+
+同步记录（2026-10-15）：功能提交 e59b4ae 已从 feature/app-menu-settings 快进合并到本地 main。首次双分支推送 40 秒超时，远端接收尚未确认；需重试并比对 SHA，不能宣称已同步。
