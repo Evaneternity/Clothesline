@@ -1,11 +1,15 @@
-# 最新交接：Windows 首个候选包已验证，准备发行
+# 最新交接：Windows 首个候选版已发布
 
-2026-10-15。feature/windows-app 实现原生 WPF/.NET 10 LTS x64 应用，保留 macOS Swift 版本及现有 rc.3 DMG。Windows 主要能力和首版缺口见 windows/README.md / README.en.md；根目录双语说明新增 Windows 安装/便携下载。
+2026-10-15。完成 Windows 原生 WPF/.NET 10 LTS x64 应用、Setup/便携包；保留 macOS Swift 应用及现有 rc.3 DMG。Windows 能力与差异见 windows/README.md、README.en.md，根目录双语下载已更新。
 
-源码 8b2e09b，Windows runner 38701416790 全流程成功：核心真实 watcher/稳定完成/固定/安全取下和重命名、WPF 构造与实际 FileDrop 数据、图片释放源锁、self-contained 编译、Inno Setup 安装、安装后 smoke、卸载与源文件 sentinel。不能把这些写成完整鼠标桌面验收。macOS 通用构建及核心回归通过。所有文件操作使用自建测试目录。
+源提交 8b2e09b，候选标签 windows-v0.1.0-rc.1 精确指向该构建源。Windows runner 38701416790 全流程通过：核心完成检测/真实 watcher/固定/安全取下和改名、WPF 构造、真实 FileDrop 数据、图片源锁释放、self-contained 编译、Inno Setup 安装、安装后 smoke、卸载与源文件 sentinel。macOS 核心与 Universal build 通过。全部使用自建测试目录；未修改本机系统权限或安装 Windows 工具链。
 
-修复过早期 smoke 反射同名 Render 方法、拖出源捕获、外部拖入期间隐藏与图片文件锁。剪贴板会话副本限制当前用户访问；不持久化到最近文件。仅用户点击时写登录启动或查询更新，Windows 标签 windows-v 避免 macOS 误提示。
+云端发布 38702352934 success，核验 run 源与标签、SHA256、PE x64、随包运行时与完整 MIT 后发布。Release：https://github.com/zhongguozhang/Clothesline/releases/tag/windows-v0.1.0-rc.1 。公开候选，未 Authenticode 签名。
 
-构建产物包含 Setup.exe、portable.zip、SHA256SUMS.txt，位于 GitHub Actions artifact Clothesline-Windows-x64。已验证的归档 digest c52a6f3e71477c77c38c83badc61333b41f245fc6120580ae18e922c67c75d40。发布工作流限定 main，验证 run 成功且标签 SHA 与产物源提交一致、SHA256/PE 架构/随包运行时和 MIT，然后上传。
+- Setup：54,961,625 字节；SHA-256 1afbe5bf8d65e057fca85f05ed4627bcc54eed038934701b41a545b10b5bcaad。
+- Portable ZIP：77,658,705 字节；SHA-256 d89d81a717d870fd50ac63ca83f7abbfd45bb7d25af48cfaf8c782027daf8174。
+- SHA256SUMS.txt 已上传；GitHub 资产 digest 已核对。
 
-下一步：合并 main、标签 windows-v0.1.0-rc.1 指向已验证 8b2e09b，触发 publish-windows.yml 的 run_id=38701416790，核对 Release 资产并更新最终记录。Windows 实际跨应用拖放、登录启动、多 DPI 和客户端 Windows 10/11 桌面操作仍待验收；首版主屏，暂不包含系统分享、废纸篓删除、全局快捷键。
+macOS 本机下载 132 MB Actions 归档曾超时，改为受限的 publish-windows.yml 手动触发云端发布，成功；没有将超时记录当作发布失败。main 与功能分支远端已核验 430dce6，最终文档追加后需推送并复核。
+
+下一步仅 Windows 真机客户端人工验收：启动/托盘、跨应用实际拖放、剪贴板、登录启动与多 DPI。Windows Server 2022 runner 自动 smoke 不等于 Windows 10/11 完整桌面验收。首版只跟主屏，不含系统分享、废纸篓删除、全局快捷键；以后由用户确定迭代范围。不要重复创建本候选标签或覆盖现有资产。

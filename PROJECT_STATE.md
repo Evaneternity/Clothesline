@@ -146,3 +146,7 @@ GitHub fetch 两次 20 秒超时；保留此前未确认同步的提交，推送
 Windows 验证进展：Windows runner 38700774792（e3eb25b）已成功完成核心文件/真实 watcher、self-contained 编译、WPF 构造、拖放数据、安装/安装后 smoke 与卸载及源文件保留测试。此前 smoke 失败为反射匹配到 WPF 同名 Render 方法，已修复。随后补充外部拖放保持展开、图片读取释放文件锁，最终候选包须按最新 CI 重新核对。macOS 通用构建及核心测试通过。
 
 最终 Windows 构建 38701416790 / 8b2e09b 全流程通过，包含图片文件锁回归；归档 131,889,945 字节，归档 digest sha256:c52a6f3e71477c77c38c83badc61333b41f245fc6120580ae18e922c67c75d40。新增手动触发的云端发布工作流：限定 main、验证成功 Windows run 与标签精确同源、校验 SHA256、PE x64 与运行时/许可，再上传候选资产。用于直接从已验证的云端产物发行，避免经本机重复传输。实际发布结果随后记录。
+
+Windows 发行完成（2026-10-15）：windows-v0.1.0-rc.1 指向实际验证源 8b2e09b；Windows 构建 38701416790、云端发布 38702352934 均 success。Release 公开、prerelease=true、draft=false，Setup 54,961,625 字节，SHA-256 1afbe5bf8d65e057fca85f05ed4627bcc54eed038934701b41a545b10b5bcaad；便携 ZIP 77,658,705 字节，SHA-256 d89d81a717d870fd50ac63ca83f7abbfd45bb7d25af48cfaf8c782027daf8174。SHA256SUMS.txt 同时提供；发布工作流校验资产 SHA256、PE x64、随包运行时与原作者 MIT，远端资产 digest 已核对。根目录双语下载已指向实际存在资产。
+
+main 与 Windows 分支已核验到 430dce6，包含所有此前 Windows 开发提交；本次仅文档最终记录后继续推送。macOS rc.3 资产与源代码功能保持原状。完整 Windows 10/11 客户端桌面拖放、登录启动与多 DPI 未人工验收；构建运行在 Windows Server 2022 runner，不宣称两者等价。
