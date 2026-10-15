@@ -134,3 +134,5 @@ GitHub fetch 两次 20 秒超时；保留此前未确认同步的提交，推送
 核心、macOS 回归、双架构 release 编译通过。DMG hdiutil verify、只读挂载通过；两种架构 codesign --verify --strict --all-architectures、lipo、otool minos 14.0、随包 MIT、Applications 链接、SHA-256 均核对。宿主机 Apple Silicon，无可用 Rosetta（x86_64 true 返回 Bad CPU type）；未安装 Rosetta，不宣称 Intel 真机或 macOS 14 最低版本已验收。
 
 产物 build/Clothesline-0.1.0-rc.3-universal.dmg，SHA-256 b6fa0e10482d20958b8a4294757913f0e3d0a37d5412f72074d915f0af4186cd。准备上传 GitHub 候选版，发布结果随后记录；仍为 ad-hoc 签名，未 Apple 公证。
+
+发行与同步完成：main、feature/universal-installer 和候选标签 v0.1.0-rc.3 均核对到 cf208af。GitHub rc.3 已公开发布（prerelease=true，draft=false），通用 DMG 为 2,935,401 字节，远端资产 digest 与上述本地 SHA-256 完全一致，同时提供 .sha256。此前菜单与应用设置的未同步提交已随 main 一并上传。下载：https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3 。
