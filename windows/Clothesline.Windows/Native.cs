@@ -45,6 +45,12 @@ internal static class Native
     }
     public static void Open(string path) => Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
     public static void Reveal(string path) => Process.Start(new ProcessStartInfo("explorer.exe", "/select,\"" + path + "\"") { UseShellExecute = true });
+    public static BitmapSource ReadImage(string path)
+    {
+        using var stream=File.OpenRead(path);
+        var image=BitmapFrame.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);
+        image.Freeze(); return image;
+    }
     public static ImageSource? Thumbnail(string path)
     {
         var extension = Path.GetExtension(path).ToLowerInvariant();

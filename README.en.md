@@ -2,13 +2,21 @@
 
 **English** · [简体中文](README.md)
 
-**Hang recently downloaded files at the top of your Mac screen.**
+**Keep downloaded files at the top of your screen for quick access.**
 
-Clothesline is a native macOS file utility that presents recent files and folders as cards on a clothesline at the top of your screen, ready to preview, open, drag, and manage.
+Clothesline is a native file utility for macOS and Windows that presents recent files and folders as cards on a clothesline at the top of your screen, ready to preview, open, drag, and manage.
 
-It watches Downloads by default. Add more watched folders or hang frequently used folders as shortcuts. Choose automatic hiding or keep the clothesline visible. Removing a card only hides its shortcut; a separate, confirmed Move to Trash action manages the original file. Everything runs locally, without an account or cloud service.
+It watches Downloads by default. Add more watched folders or hang frequently used folders as shortcuts. Choose automatic hiding or keep the clothesline visible. Removing a card only hides its shortcut; macOS also offers a separate, confirmed Move to Trash action. Everything runs locally, without an account or cloud service.
 
 **Status: V0.1 release candidate.** Built on macOS 26.6.2 / Apple Silicon. Core and macOS integration tests cover watching real files and safe file operations. Full manual UI acceptance remains pending; see [project state](PROJECT_STATE.md).
+
+## Windows
+
+[Download Windows x64 Setup](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-Setup.exe) · [Portable ZIP](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-portable.zip) · [Checksums and release notes](https://github.com/zhongguozhang/Clothesline/releases/tag/windows-v0.1.0-rc.1)
+
+For Windows 10 1809+ / Windows 11 x64 (Intel/AMD), with the runtime included. Find Clothesline in the taskbar notification area, then move the pointer to the top of the primary work area. Includes watched folders, file drag and drop, pinning, renaming, recent files, clipboard intake, launch at login, and Chinese/English menus. This is an unsigned candidate; full desktop acceptance remains pending. See the [Windows guide and feature differences](windows/README.en.md).
+
+The detailed features, recording, and build instructions below primarily describe macOS.
 
 ## Demo
 

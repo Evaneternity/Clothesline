@@ -31,7 +31,7 @@ internal sealed partial class RopeWindow
             if (clipboardItems.TryGetValue(file.Path,out var text))
             {
                 if (text is not null) data.SetText(text);
-                else data.SetImage(System.Windows.Media.Imaging.BitmapFrame.Create(new Uri(file.Path)));
+                else data.SetImage(Native.ReadImage(file.Path));
             }
             else data.SetFileDropList(new StringCollection { file.Path });
             data.SetData(OwnCopy,new MemoryStream(new byte[] { 1 })); Clipboard.SetDataObject(data,true); clipboardSequence=Native.GetClipboardSequenceNumber();

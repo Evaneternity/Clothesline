@@ -2,13 +2,21 @@
 
 [English](README.en.md) · **简体中文**
 
-**把刚刚下载完成的真实文件挂在 macOS 屏幕顶部。**
+**把下载文件挂在屏幕顶部，随手预览、拖拽与使用。**
 
-Clothesline（晾衣绳）是一款 macOS 原生文件工具，将最近下载或新增的文件与目录，以卡片形式挂在屏幕顶部，方便随手预览、打开、拖拽和管理。
+Clothesline（晾衣绳）提供 macOS 和 Windows 原生版本，将最近下载或新增的文件与目录，以卡片形式挂在屏幕顶部，方便随手预览、打开、拖拽和管理。
 
-默认监控 Downloads，也可添加多个监控文件夹，或手动挂上常用目录。晾衣绳支持自动隐藏与一直显示；取下卡片只隐藏入口，删除则通过独立的“移到废纸篓”操作完成。所有功能在本机运行，无需账号或云端服务。
+默认监控 Downloads，也可添加多个监控文件夹，或手动挂上常用目录。晾衣绳支持自动隐藏与一直显示；取下卡片只隐藏入口，macOS 另提供独立确认的“移到废纸篓”操作。所有功能在本机运行，无需账号或云端服务。
 
 **状态：V0.1 本地候选版。** 已在 macOS 26.6.2 / Apple Silicon 构建并启动，核心与 macOS 监听、安全测试通过。完整 UI 验收仍待完成，见 PROJECT_STATE.md 和 HANDOFF_LATEST.md。
+
+## Windows 版本
+
+[下载 Windows x64 安装程序](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-Setup.exe) · [便携 ZIP](https://github.com/zhongguozhang/Clothesline/releases/download/windows-v0.1.0-rc.1/Clothesline-0.1.0-windows-rc.1-x64-portable.zip) · [校验文件与发行说明](https://github.com/zhongguozhang/Clothesline/releases/tag/windows-v0.1.0-rc.1)
+
+适用于 Windows 10 1809+ / Windows 11 x64（Intel、AMD），内置运行时，无需另装 .NET。启动后在任务栏通知区域找到晾衣绳图标，鼠标移至主屏工作区域顶部展开。支持多目录监听、文件拖入拖出、固定、重命名、最近文件、剪贴板、开机启动、中英文切换等。首版为候选版，完整桌面操作待验收，尚未代码签名；详情与功能差异见 [Windows 使用说明](windows/README.md)。
+
+以下详细功能、录屏及构建说明主要针对 macOS。
 
 ## 使用演示
 

@@ -24,6 +24,11 @@ internal static class WindowsSelfTest
             var payload=RopeWindow.FilePayload(file);
             if (payload.GetData(DataFormats.FileDrop) is not string[] values || values.Single()!=file) throw new Exception("drag is not a real file drop payload");
             var app=new Application { ShutdownMode=ShutdownMode.OnExplicitShutdown };
+            var imageFile=Path.Combine(root,"owned-clipboard-image.png");
+            using (var resource=Application.GetResourceStream(new Uri("pack://application:,,,/icon.png")).Stream)
+            using (var output=File.Create(imageFile)) resource.CopyTo(output);
+            var image=Native.ReadImage(imageFile); File.Delete(imageFile);
+            if (image.PixelWidth<1 || File.Exists(imageFile)) throw new Exception("image copy retained a source file lock");
             var settings=new Settings { Attached=[file], English=true };
             var window=new RopeWindow(settings,()=>{});
             typeof(RopeWindow).GetMethod("Render",BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.DeclaredOnly)!.Invoke(window,null);
@@ -32,7 +37,7 @@ internal static class WindowsSelfTest
             var license=Path.Combine(AppContext.BaseDirectory,"LICENSE.txt");
             if (!File.ReadAllText(license).Contains("Alejandro")) throw new Exception("upstream MIT notice missing");
             if (!File.Exists(Native.Downloads()) && !Directory.Exists(Native.Downloads())) { /* Known folder may be uncreated on a fresh runner. */ }
-            File.WriteAllText(report,JsonSerializer.Serialize(new { passed=true, checks=new[] { "real file card", "safe dismissal", "file-drop payload", "WPF overlay construction", "bundled MIT license" }, uiAcceptance=false }));
+            File.WriteAllText(report,JsonSerializer.Serialize(new { passed=true, checks=new[] { "real file card", "safe dismissal", "file-drop payload", "WPF overlay construction", "image source lock released", "bundled MIT license" }, uiAcceptance=false }));
             app.Shutdown(); return 0;
         }
         catch (Exception error)

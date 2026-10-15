@@ -142,3 +142,5 @@ GitHub fetch 两次 20 秒超时；保留此前未确认同步的提交，推送
 用户新增 Windows 支持范围。在 feature/windows-app 实现独立 WPF/.NET 10 LTS x64 应用、文件完成检测及安全重命名核心、真实 copy-only 拖出、托盘和双语菜单、剪贴板默认 opt-in、当前用户登录启动、独立 Windows 更新标签；macOS 源码不变。新增 Windows CI、self-contained 发布及 Inno Setup 当前用户安装程序。Windows 首版主屏，暂不包含系统分享、废纸篓删除和全局快捷键，详见 windows/README.md。
 
 当前提交用于 Windows runner 编译/自动验证，尚不宣称构建或 UI 通过。后续按 CI 结果修复后再提供可下载版本。
+
+Windows 验证进展：Windows runner 38700774792（e3eb25b）已成功完成核心文件/真实 watcher、self-contained 编译、WPF 构造、拖放数据、安装/安装后 smoke 与卸载及源文件保留测试。此前 smoke 失败为反射匹配到 WPF 同名 Render 方法，已修复。随后补充外部拖放保持展开、图片读取释放文件锁，最终候选包须按最新 CI 重新核对。macOS 通用构建及核心测试通过。
