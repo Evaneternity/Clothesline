@@ -180,13 +180,17 @@ internal sealed partial class RopeWindow : Window
             "\n" + (file.IsDirectory ? T("文件夹（不递归计算大小）","Folder (contents not counted)") : $"{file.Size:N0} bytes") + "\n" + T("创建：","Created: ") + file.Created.ToLocalTime() + "\n" + T("修改：","Modified: ") + file.Modified.ToLocalTime() + (missing ? "\n" + T("源文件不存在或无法访问","Original is missing or inaccessible") : "");
         ToolTipService.SetInitialShowDelay(card,400); ToolTipService.SetShowDuration(card,30000);
         Point down = new(); bool pressed = false;
-        card.MouseLeftButtonDown += (_,e) => { down=e.GetPosition(card); pressed=true; if (e.ClickCount==2) { pressed=false; Guard(()=>Open(file)); } };
-        card.MouseLeftButtonUp += (_,_) => pressed=false;
+        card.MouseLeftButtonDown += (_,e) => {
+            down=e.GetPosition(card); pressed=true; busy=true; card.CaptureMouse();
+            if (e.ClickCount==2) { pressed=false; card.ReleaseMouseCapture(); busy=false; Guard(()=>Open(file)); }
+        };
+        card.MouseLeftButtonUp += (_,_) => { pressed=false; card.ReleaseMouseCapture(); busy=false; };
+        card.LostMouseCapture += (_,_) => { if (pressed) { pressed=false; busy=false; } };
         card.MouseMove += (_,e) => {
             if (!pressed || e.LeftButton!=MouseButtonState.Pressed) return;
             var here=e.GetPosition(card); if ((here-down).Length<6) return;
-            pressed=false;
-            Guard(()=> { Validate(file); busy=true; Native.ClickThrough(this,false); try { DragDrop.DoDragDrop(card,FilePayload(file.Path),DragDropEffects.Copy); } finally { busy=false; } });
+            pressed=false; card.ReleaseMouseCapture();
+            Guard(()=> { try { Validate(file); Native.ClickThrough(this,false); DragDrop.DoDragDrop(card,FilePayload(file.Path),DragDropEffects.Copy); } finally { busy=false; signature=""; Render(); } });
         };
         card.ContextMenu = CardMenu(file);
         card.ContextMenuOpening += (_,_) => busy=true;

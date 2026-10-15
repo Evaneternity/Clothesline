@@ -26,7 +26,7 @@ internal static class WindowsSelfTest
             var app=new Application { ShutdownMode=ShutdownMode.OnExplicitShutdown };
             var settings=new Settings { Attached=[file], English=true };
             var window=new RopeWindow(settings,()=>{});
-            typeof(RopeWindow).GetMethod("Render",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,null);
+            typeof(RopeWindow).GetMethod("Render",BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.DeclaredOnly)!.Invoke(window,null);
             var cards=(StackPanel)typeof(RopeWindow).GetField("cards",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(window)!;
             if (cards.Children.Count!=1 || !window.AllowDrop || !window.Topmost) throw new Exception("WPF card/drop/overlay construction failed");
             var license=Path.Combine(AppContext.BaseDirectory,"LICENSE.txt");
