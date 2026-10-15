@@ -1,5 +1,12 @@
 # Changelog
 
+## Windows 0.1.0-rc.1 — 2026-10-15
+- 首个 Windows x64 原生候选版，WPF/.NET 10 LTS，提供 Setup 与便携 ZIP，内置运行时。
+- 多目录下载监听、文件/目录挂载与 copy-only 拖出、固定、重命名、最近文件、剪贴板和中英文托盘菜单。
+- 开机启动、检查 Windows 更新、关于与 MIT 许可；平台独立标签避免 macOS 更新误报。
+- Windows runner 核心、真实 watcher、WPF 构造、文件拖放数据、图片文件锁、安装/卸载与源文件保留测试通过。
+- 首版主屏，未提供系统分享、废纸篓删除、全局快捷键；完整桌面交互待验收，安装程序暂未代码签名。
+
 ## 0.1.0-rc.3 — 2026-10-15
 - Universal 安装包包含 Intel x86_64 和 Apple Silicon arm64 原生代码，要求 macOS 14+。
 - 构建可选 universal / native / arm64 / x86_64，DMG 自动读取应用版本。

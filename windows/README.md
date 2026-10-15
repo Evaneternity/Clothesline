@@ -30,6 +30,6 @@
 
 自动运行核心测试、self-contained 发布、WPF 构造/文件拖放数据 smoke test、安装/卸载与源文件保留测试，输出 `build/windows/dist` 下的 Setup.exe、便携 ZIP 和 SHA256SUMS.txt。用户无需预装 .NET。`.github/workflows/windows.yml` 在 Windows runner 执行同样流程。
 
-Windows runner 已完成编译、核心/应用构造和安装/卸载验证，最终候选包仍需按最新 CI 结果核对；这些测试不能视为真实鼠标交互或完整 Windows 桌面验收。安装程序暂未 Authenticode 签名，Windows 可能显示未知发布者。
+Windows runner [38701416790](https://github.com/zhongguozhang/Clothesline/actions/runs/38701416790) 已通过最终编译、核心/真实 watcher、WPF 构造与文件拖放数据、图片文件锁、安装/安装后测试与卸载及源文件保留验证；这些自动测试不能视为完整 Windows 桌面操作验收。安装程序暂未 Authenticode 签名，Windows 可能显示未知发布者。
 
 完成检测属于启发式：如果下载使用最终文件名且暂停超过两秒，可能提前出现。首版不递归检查文件夹内写入完成状态。

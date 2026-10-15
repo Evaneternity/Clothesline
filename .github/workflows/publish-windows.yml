@@ -1,0 +1,70 @@
+name: Publish verified Windows candidate
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Windows build run ID
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BUILD_RUN: ${{ inputs.run_id }}
+      RELEASE_TAG: windows-v0.1.0-rc.1
+    steps:
+      - name: Validate successful Windows run and exact release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GH_REPO/actions/runs/$BUILD_RUN" > run.json
+          jq -e '.conclusion == "success" and .name == "Windows build" and .repository.full_name == env.GH_REPO' run.json
+          source_sha=$(jq -r '.head_sha' run.json)
+          tag_sha=$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq '.sha')
+          test "$source_sha" = "$tag_sha"
+          gh run download "$BUILD_RUN" --name Clothesline-Windows-x64 --dir artifact
+      - name: Verify checksums, runtime and license
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd artifact/dist
+          sha256sum -c SHA256SUMS.txt
+          python3 - <<'PY'
+          import pathlib, zipfile, struct
+          root = pathlib.Path('.')
+          installer = root / 'Clothesline-0.1.0-windows-rc.1-x64-Setup.exe'
+          assert installer.read_bytes()[:2] == b'MZ'
+          with zipfile.ZipFile(root / 'Clothesline-0.1.0-windows-rc.1-x64-portable.zip') as z:
+              exe = z.read('Clothesline.exe')
+              offset = struct.unpack_from('<I', exe, 0x3c)[0]
+              assert exe[offset:offset+4] == b'PE\0\0'
+              assert struct.unpack_from('<H', exe, offset+4)[0] == 0x8664
+              assert 'Alejandro' in z.read('LICENSE.txt').decode('utf-8-sig')
+              assert 'hostfxr.dll' in z.namelist()
+          PY
+      - name: Publish candidate installer and portable package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > notes.md <<'NOTES'
+          Windows 原生首个候选版：适用于 Windows 10 1809+ / Windows 11 x64（Intel、AMD），内置 .NET 10 LTS 运行时，无需另装 .NET。
+
+          下载 Setup.exe 安装，或完整解压 portable.zip 后运行 Clothesline.exe。启动后在任务栏通知区域找到晾衣绳图标，鼠标移到主屏工作区域顶部展开。
+
+          包含多目录下载监听、真实文件/目录挂载与 copy-only 拖出、固定、保留扩展名重命名、身份提示、最近文件、剪贴板独立开关、开机启动、中英文菜单和关于。取下/清空不删除原文件。
+
+          Windows runner 编译、核心/真实文件监听、WPF 构造/文件拖放数据、图片文件锁、安装/安装后 smoke 与卸载及源文件保留测试已通过。完整桌面鼠标操作、跨应用拖入及实际登录启动仍待人工验收。首版仅主屏，暂不包含系统分享、废纸篓删除和全局快捷键。
+
+          当前安装程序未 Authenticode 签名，发布者可能显示为未知；SHA256SUMS.txt 提供文件校验。
+
+          Native Windows x64 candidate for Windows 10 1809+ / Windows 11, with the .NET runtime included. Use Setup.exe, or extract the entire portable ZIP. Automated Windows build, safety/watcher, app-construction, image-lock, installation and uninstallation tests passed. Full interactive desktop acceptance remains pending. Unsigned candidate; see the Windows guide for feature differences.
+          NOTES
+          gh release create "$RELEASE_TAG" artifact/dist/* --verify-tag --prerelease --latest=false --title 'Clothesline Windows v0.1.0-rc.1 (x64)' --notes-file notes.md

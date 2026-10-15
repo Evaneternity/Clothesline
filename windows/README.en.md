@@ -23,3 +23,5 @@ Build on Windows with .NET 10 SDK and Inno Setup 6:
 The Windows workflow runs core safety/watcher tests, self-contained publishing, a WPF construction/file-drop payload smoke test, installation, installed-app smoke test, and uninstallation with a source-file sentinel. These automated checks do not establish complete interactive UI acceptance. The installer is not Authenticode-signed; Windows may show an unknown publisher.
 
 Completion detection is heuristic: a transfer paused for over two seconds under its final name may appear early. Folder contents are not recursively checked for completion.
+
+Final Windows runner verification: [run 38701416790](https://github.com/zhongguozhang/Clothesline/actions/runs/38701416790), source `8b2e09b`. All core, image-lock, app-construction, installed-app, and install/uninstall checks passed. Interactive desktop acceptance remains pending.

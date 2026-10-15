@@ -1,9 +1,11 @@
-# 最新交接：Windows 原生版本开发中
+# 最新交接：Windows 首个候选包已验证，准备发行
 
-2026-10-15。用户要求生成 Windows 版本，使用 feature/windows-app；保留 macOS Swift 应用和现有 rc.3 DMG。
+2026-10-15。feature/windows-app 实现原生 WPF/.NET 10 LTS x64 应用，保留 macOS Swift 版本及现有 rc.3 DMG。Windows 主要能力和首版缺口见 windows/README.md / README.en.md；根目录双语说明新增 Windows 安装/便携下载。
 
-windows/Clothesline.Core 为完成检测、取下、固定容量、重命名及设置；Clothesline.Windows 为 WPF 顶部绳、卡片和托盘、剪贴板临时副本、开机启动及独立 Windows 更新；Clothesline.Tests 为文件安全和真实 watcher 回归。安装程序使用 Inno Setup，self-contained 发布，不要求用户装 .NET，图标从独立 PNG 转 ICO。build-windows.ps1 包含发布 smoke、安装、安装后 smoke、卸载和自建源文件保留测试。
+源码 8b2e09b，Windows runner 38701416790 全流程成功：核心真实 watcher/稳定完成/固定/安全取下和重命名、WPF 构造与实际 FileDrop 数据、图片释放源锁、self-contained 编译、Inno Setup 安装、安装后 smoke、卸载与源文件 sentinel。不能把这些写成完整鼠标桌面验收。macOS 通用构建及核心回归通过。所有文件操作使用自建测试目录。
 
-当前通过 .github/workflows/windows.yml 在 Windows runner 验证编译与测试，结果待核验；不能声称已运行 Windows GUI。首版能力和缺口详见 windows/README.md。下一步：查看 CI、修复编译/运行错误，取得安装包和校验和，再发布 Windows 独立候选版本 windows-v0.1.0-rc.1（平台标签避免触发 macOS 更新提示）。最终须更新状态、交接、CHANGELOG/ROADMAP，并同步 main 与 SHA。
+修复过早期 smoke 反射同名 Render 方法、拖出源捕获、外部拖入期间隐藏与图片文件锁。剪贴板会话副本限制当前用户访问；不持久化到最近文件。仅用户点击时写登录启动或查询更新，Windows 标签 windows-v 避免 macOS 误提示。
 
-中途证据：38700774792（e3eb25b）Windows 全流程成功，安装/卸载源文件 sentinel 保持。已定位早期 smoke 反射同名方法错误；后续补充外部拖入不隐藏、图片复制不保持源文件锁，待最终 CI。根目录中英文 README 已增加 Windows 下载入口，发布前须确认链接资产实际存在。
+构建产物包含 Setup.exe、portable.zip、SHA256SUMS.txt，位于 GitHub Actions artifact Clothesline-Windows-x64。已验证的归档 digest c52a6f3e71477c77c38c83badc61333b41f245fc6120580ae18e922c67c75d40。发布工作流限定 main，验证 run 成功且标签 SHA 与产物源提交一致、SHA256/PE 架构/随包运行时和 MIT，然后上传。
+
+下一步：合并 main、标签 windows-v0.1.0-rc.1 指向已验证 8b2e09b，触发 publish-windows.yml 的 run_id=38701416790，核对 Release 资产并更新最终记录。Windows 实际跨应用拖放、登录启动、多 DPI 和客户端 Windows 10/11 桌面操作仍待验收；首版主屏，暂不包含系统分享、废纸篓删除、全局快捷键。
