@@ -1,0 +1,32 @@
+name: Windows build
+on:
+  push:
+    paths:
+      - 'windows/**'
+      - 'scripts/build-windows.ps1'
+      - 'assets/clothesline*'
+      - 'LICENSE'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Test, publish and build installer
+        shell: pwsh
+        run: ./scripts/build-windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Clothesline-Windows-x64
+          path: build/windows/dist/*
+          if-no-files-found: error
+          retention-days: 14

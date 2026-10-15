@@ -136,3 +136,9 @@ GitHub fetch 两次 20 秒超时；保留此前未确认同步的提交，推送
 产物 build/Clothesline-0.1.0-rc.3-universal.dmg，SHA-256 b6fa0e10482d20958b8a4294757913f0e3d0a37d5412f72074d915f0af4186cd。准备上传 GitHub 候选版，发布结果随后记录；仍为 ad-hoc 签名，未 Apple 公证。
 
 发行与同步完成：main、feature/universal-installer 和候选标签 v0.1.0-rc.3 均核对到 cf208af。GitHub rc.3 已公开发布（prerelease=true，draft=false），通用 DMG 为 2,935,401 字节，远端资产 digest 与上述本地 SHA-256 完全一致，同时提供 .sha256。此前菜单与应用设置的未同步提交已随 main 一并上传。下载：https://github.com/zhongguozhang/Clothesline/releases/tag/v0.1.0-rc.3 。
+
+## Windows 原生版本（2026-10-15，在验证）
+
+用户新增 Windows 支持范围。在 feature/windows-app 实现独立 WPF/.NET 8 x64 应用、文件完成检测及安全重命名核心、真实 copy-only 拖出、托盘和双语菜单、剪贴板默认 opt-in、当前用户登录启动、独立 Windows 更新标签；macOS 源码不变。新增 Windows CI、self-contained 发布及 Inno Setup 当前用户安装程序。Windows 首版主屏，暂不包含系统分享、废纸篓删除和全局快捷键，详见 windows/README.md。
+
+当前提交用于 Windows runner 编译/自动验证，尚不宣称构建或 UI 通过。后续按 CI 结果修复后再提供可下载版本。
