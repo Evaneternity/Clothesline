@@ -19,4 +19,4 @@
 ## 限制与后续
 设置窗口构造和菜单入口通过，但 CUA 读取独立预览窗口失败（cgWindowNotFound），完整输入/真实鼠标/多屏/睡眠 UI 仍需验收。临时预览使用独立应用身份，不触及当前安装版；本轮不替换运行中的应用、不发行安装包。现有 rc.3 DMG 与 Windows 安装包不含这些新增设置。Windows 若需要对齐需单独实现验证。
 
-代码及说明提交到本功能分支，按 AGENTS.md 推送并独立核对远端 SHA；本轮同步结果见交付消息，不自动合并 main 或创建 Release。
+功能提交 45933c0 已保存在本地 feature/hover-delay-expiration。按 AGENTS.md 尝试推送失败：全局凭据助手引用不存在的 /usr/bin/gh；以单次 Git 配置指定已安装的 gh 后，GitHub 返回 403，当前登录账号没有 zhongguozhang/Clothesline 写权限。未修改全局凭据配置，未同步远端、合并 main 或创建 Release。后续需具备写权限的身份推送该分支。

@@ -15,6 +15,8 @@ Swift 6.4 默认 swiftbuild 共用两种架构输出路径，修正 build-app �
 
 限制：界面自动化无法取得独立设置预览窗口（cgWindowNotFound），不能宣称完整设置输入或真实鼠标 UI 已验收。多屏/睡眠真实交互、Intel 真机及 macOS 14 仍待验收。Windows 尚无此轮新增设置。
 
+同步状态（2026-10-16）：功能提交 45933c0 位于本地 feature/hover-delay-expiration；当前 GitHub 账号推送被 403 拒绝，无仓库写权限。源码、本地 Universal 应用均已完成，尚未同步远端。
+
 ## 架构与功能
 SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏、SwiftUI 卡片、Quick Look、Carbon 快捷键。DownloadsWatcher 使用 vnode 事件及 2 秒轮询；DownloadIndex 扫描顶层文件与目录，排除隐藏项、符号链接及临时下载名，使用两次稳定样本和 2 秒静默期。
 
