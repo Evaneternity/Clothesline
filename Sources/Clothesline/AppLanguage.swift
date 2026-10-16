@@ -22,6 +22,7 @@ enum AppLanguage: String, CaseIterable {
         "最近文件…": "Recent Files…", "剪贴板挂载": "Clipboard", "自动挂上图片 / 截图": "Automatically Hang Images / Screenshots",
         "自动挂上文字便签": "Automatically Hang Text Notes", "清空剪贴板挂载内容": "Clear Clipboard Items",
         "打开下载文件夹": "Open Downloads", "添加监控文件夹…": "Add Watched Folders…",
+        "保留文件时间…": "Item Retention Time…",
         "保留文件数量": "Items to Keep", "屏幕可容纳数量": "Fit to Screen", "卡片尺寸": "Card Size",
         "小": "Small", "中": "Medium", "大": "Large", "清空晾衣绳（不删除文件）": "Clear Clothesline (Keep Files)",
         "重新显示已取下的文件": "Show Removed Items Again", "快捷键：⌃⌥T": "Shortcut: ⌃⌥T",

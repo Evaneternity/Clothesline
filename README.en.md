@@ -32,6 +32,7 @@ The detailed features and usage instructions below primarily describe macOS; see
 
 ## Features
 
+- **Item retention (macOS source build)**: Item Retention Time appears below Items to Keep. Its editor sets a lifetime in minutes/hours/days for watched files, folders and clipboard content. The default is unlimited. Expiration only hides items, preserving originals and the system clipboard. Pins and manually hung files are kept; extending the lifetime restores content still in the session. An empty rope stays hidden on ordinary hover.
 - **Watch downloads**: Watch Downloads and multiple added folders, showing recent files and top-level folders. Watched folders persist across restarts; polling covers missed events and wake from sleep.
 - **Detect completed downloads**: Filter hidden files, symbolic links, and temporary items such as `.crdownload`, `.download`, `.part`, and `.tmp`. Display files after two stable scans, at least two seconds without changes, and no companion temporary download.
 - **Hang files and folders**: Drag one or multiple items from Finder or select them from the menu. Store persistent references while originals stay in place.

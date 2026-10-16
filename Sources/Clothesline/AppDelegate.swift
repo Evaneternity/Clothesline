@@ -6,6 +6,9 @@ import ServiceManagement
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let line = Line()
+    private let retentionPreferences = RetentionPreferences()
+    private let retentionSettingsWindow = RetentionSettingsWindow()
+    private var expirationTimer: Timer?
     private let loginItems = LoginItems()
     private let updateChecker = UpdateChecker()
     private let identityPanel = FileIdentityPanel()
@@ -48,16 +51,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
 
-        monitors = FolderMonitors { [weak self] in self?.line.adopt($0) }
+        monitors = FolderMonitors { [weak self] files in
+            guard let self else { return }
+            self.line.adopt(files, expiration: self.monitors?.expirationPolicy ?? ItemExpirationPolicy())
+        }
         clipboard = ClipboardMonitor { [weak self] content, manual in
             try self?.line.attachClipboard(content, manual: manual)
         }
+        line.setExpirationPolicy(ItemExpirationPolicy(lifetime: retentionPreferences.retentionLifetime))
         clipboard?.start()
         monitors?.start()
         hotkey = HotKey { [weak self] in self?.togglePinned() }
         pointerTimer = Timer.scheduledTimer(withTimeInterval: 0.10, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.pollPointer() }
         }
+        expirationTimer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.line.refreshExpiration() }
+        }
+        if let expirationTimer { RunLoop.main.add(expirationTimer, forMode: .common) }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.monitors?.wake() }
@@ -70,7 +81,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         clipboard?.stop()
         line.clearClipboardStorage()
         pointerTimer?.invalidate()
+        expirationTimer?.invalidate()
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
+    }
+
+    private func showRetentionSettings() {
+        retentionSettingsWindow.show(preferences: retentionPreferences) { [weak self] in
+            guard let self else { return }
+            self.line.setExpirationPolicy(ItemExpirationPolicy(lifetime: self.retentionPreferences.retentionLifetime))
+        }
     }
 
     private func addMonitoredFolders() {
@@ -136,7 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if atTop || (line.revealed && (overPanel || overCard)) {
             lastInside = Date()
         }
-        let shouldReveal = (pinned || Date().timeIntervalSince(lastInside) < 0.75)
+        let shouldReveal = pinned || ((!line.items.isEmpty || externalDragging) && Date().timeIntervalSince(lastInside) < 0.75)
         if shouldReveal != line.revealed { line.revealed = shouldReveal }
         // During an external mouse drag, expose the full rope as a drop target.
         let externalDrag = NSEvent.pressedMouseButtons & 1 != 0 && line.draggingID == nil
@@ -243,6 +262,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let keepItem = NSMenuItem(title: AppLanguage.translate("保留文件数量"), action: nil, keyEquivalent: "")
         keepItem.submenu = keepSubmenu
         menu.addItem(keepItem)
+        menu.addItem(ClosureMenuItem("保留文件时间…") { [weak self] in self?.showRetentionSettings() })
 
         let sizeSubmenu = NSMenu(title: AppLanguage.translate("卡片尺寸"))
         for size in Layout.Size.allCases {
@@ -288,6 +308,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         for language in AppLanguage.allCases {
             let item = ClosureMenuItem(language == .chinese ? "简体中文" : "English") { [weak self] in
                 AppLanguage.current = language
+                if self?.retentionSettingsWindow.window?.isVisible == true { self?.showRetentionSettings() }
                 self?.line.objectWillChange.send()
                 self?.recentDrawer.refreshLanguage()
             }
