@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let recentDrawer = RecentDrawer()
     private var hotkey: HotKey?
     private var pointerTimer: Timer?
+    private var expirationTimer: Timer?
     private var wakeObserver: NSObjectProtocol?
     private(set) var pinned = UserDefaults.standard.bool(forKey: "alwaysShowLine")
     private var currentScreen: NSScreen?
@@ -52,11 +53,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         monitors = FolderMonitors { [weak self] files in
             guard let self else { return }
-            self.line.adopt(files, expiration: self.monitors?.expirationPolicy ?? FolderExpirationPolicy())
+            self.line.adopt(files, expiration: self.monitors?.expirationPolicy ?? ItemExpirationPolicy())
         }
         clipboard = ClipboardMonitor { [weak self] content, manual in
             try self?.line.attachClipboard(content, manual: manual)
         }
+        line.setExpirationPolicy(ItemExpirationPolicy(lifetime: preferences.retentionLifetime))
         clipboard?.start()
         monitors?.start()
         hotkey = HotKey { [weak self] in self?.togglePinned() }
@@ -64,6 +66,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             MainActor.assumeIsolated { self?.pollPointer() }
         }
         if let pointerTimer { RunLoop.main.add(pointerTimer, forMode: .common) }
+        expirationTimer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.line.refreshExpiration() }
+        }
+        if let expirationTimer { RunLoop.main.add(expirationTimer, forMode: .common) }
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
@@ -79,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         clipboard?.stop()
         line.clearClipboardStorage()
         pointerTimer?.invalidate()
+        expirationTimer?.invalidate()
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
     }
 
@@ -96,7 +103,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             do { try monitors?.add(url) }
             catch { NSAlert(error: error).runModal() }
         }
-        if settingsWindow.window?.isVisible == true { showSettings() }
     }
 
     private func recalculateCapacity() {
@@ -176,10 +182,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func togglePinned() { setAlwaysVisible(!pinned) }
 
-    private func showSettings() {
-        settingsWindow.show(preferences: preferences, folders: monitors?.folders ?? []) { [weak self] in
-            self?.revealController.reset()
-            self?.monitors?.refresh()
+    private func showSettings(_ page: SettingsWindow.Page) {
+        settingsWindow.show(page, preferences: preferences) { [weak self] in
+            guard let self else { return }
+            self.revealController.reset()
+            self.line.setExpirationPolicy(ItemExpirationPolicy(lifetime: self.preferences.retentionLifetime))
         }
     }
 
@@ -216,13 +223,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
         menu.addItem(.separator())
-        menu.addItem(ClosureMenuItem("设置…") { [weak self] in self?.showSettings() })
         let show = ClosureMenuItem("一直显示晾衣绳") { [weak self] in self?.togglePinned() }
         show.state = pinned ? .on : .off
         menu.addItem(show)
         let autoHide = ClosureMenuItem("自动隐藏晾衣绳") { [weak self] in self?.setAlwaysVisible(false) }
         autoHide.state = pinned ? .off : .on
         menu.addItem(autoHide)
+        menu.addItem(ClosureMenuItem("悬停显示延迟…") { [weak self] in self?.showSettings(.hoverDelay) })
         menu.addItem(ClosureMenuItem("挂上文件或文件夹…") { [weak self] in self?.attachFolder() })
         menu.addItem(ClosureMenuItem("最近文件…") { [weak self] in
             guard let self else { return }; self.recentDrawer.show(line: self.line)
@@ -270,6 +277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let keepItem = NSMenuItem(title: AppLanguage.translate("保留文件数量"), action: nil, keyEquivalent: "")
         keepItem.submenu = keepSubmenu
         menu.addItem(keepItem)
+        menu.addItem(ClosureMenuItem("保留文件时间…") { [weak self] in self?.showSettings(.retention) })
 
         let sizeSubmenu = NSMenu(title: AppLanguage.translate("卡片尺寸"))
         for size in Layout.Size.allCases {
@@ -317,7 +325,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 AppLanguage.current = language
                 self?.line.objectWillChange.send()
                 self?.recentDrawer.refreshLanguage()
-                if self?.settingsWindow.window?.isVisible == true { self?.showSettings() }
+                if self?.settingsWindow.window?.isVisible == true, let page = self?.settingsWindow.page {
+                    self?.showSettings(page)
+                }
             }
             item.state = AppLanguage.current == language ? .on : .off
             languages.addItem(item)

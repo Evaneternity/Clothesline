@@ -13,11 +13,9 @@ final class FolderMonitors {
     private let onUpdate: ([DownloadFile]) -> Void
     private let key = "monitoredFolderBookmarks"
 
-    var expirationPolicy: FolderExpirationPolicy {
+    var expirationPolicy: ItemExpirationPolicy {
         let preferences = DisplayPreferences(defaults: defaults)
-        return FolderExpirationPolicy(lifetimes: Dictionary(uniqueKeysWithValues: folders.map {
-            ($0.standardizedFileURL.path, preferences.lifetime(for: $0))
-        }))
+        return ItemExpirationPolicy(lifetime: preferences.retentionLifetime)
     }
 
     /// Reapply preferences immediately, including when a longer lifetime restores items.

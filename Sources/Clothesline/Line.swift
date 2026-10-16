@@ -41,6 +41,7 @@ final class Line: ObservableObject {
     private struct ClipboardEntry {
         var content: ClipboardContent
         let url: URL
+        var capturedAt: Date
     }
     private var clipboardEntries: [ClipboardEntry] = []
     private var clipboardDirectory: URL?
@@ -51,9 +52,11 @@ final class Line: ObservableObject {
     private var pins: [Pin] = []
     private var latest: [DownloadFile] = []
     // Each scan also refreshes an open recent-files drawer as wall time advances.
-    @Published private var expiration = FolderExpirationPolicy()
+    @Published private var expiration = ItemExpirationPolicy()
     @Published private(set) var recent: [DownloadFile] = []
-    var interactionHeld = false
+    var interactionHeld = false {
+        didSet { if oldValue && !interactionHeld { updateVisibleItems() } }
+    }
     private var attachedFolders: [URL] = []
     private static let foldersKey = "attachedFolderBookmarks"
     private var dismissed: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "dismissedFiles") ?? [])
@@ -86,7 +89,7 @@ final class Line: ObservableObject {
         }
     }
 
-    func adopt(_ files: [DownloadFile], expiration: FolderExpirationPolicy = FolderExpirationPolicy()) {
+    func adopt(_ files: [DownloadFile], expiration: ItemExpirationPolicy = ItemExpirationPolicy()) {
         latest = files
         self.expiration = expiration
         remember(files)
@@ -95,16 +98,30 @@ final class Line: ObservableObject {
         updateVisibleItems()
     }
 
+    func setExpirationPolicy(_ policy: ItemExpirationPolicy) {
+        expiration = policy
+        updateVisibleItems()
+    }
+
+    /// Expire clipboard-only sessions even if a folder scan is slow or unavailable.
+    func refreshExpiration(now: Date = Date()) {
+        guard expiration.lifetime > 0 else { return }
+        objectWillChange.send()
+        updateVisibleItems(now: now)
+    }
+
     func updateVisibleItems(now: Date = Date()) {
         // Preserve the AppKit drag source even when the Downloads scan changes.
-        guard pressedID == nil, draggingID == nil else { return }
+        guard pressedID == nil, draggingID == nil, !interactionHeld else { return }
         let attached = attachedFolders.compactMap { try? DownloadIndex.read($0) }
         let attachedPaths = Set(attached.map(\.path))
         let originalFiles = attached + latest.filter {
             !attachedPaths.contains($0.path) && expiration.includes($0, now: now)
         }
         remember(originalFiles)
-        let clipboardFiles = clipboardEntries.compactMap { try? DownloadIndex.read($0.url) }
+        let clipboardFiles = clipboardEntries
+            .filter { expiration.includes(since: $0.capturedAt, now: now) }
+            .compactMap { try? DownloadIndex.read($0.url) }
         let combined = clipboardFiles + originalFiles
         for index in pins.indices {
             var stale = false
@@ -186,12 +203,17 @@ final class Line: ObservableObject {
     }
 
     /// Clipboard payloads are owned session files, excluded from persistent history/bookmarks.
-    func attachClipboard(_ content: ClipboardContent, manual: Bool = false) throws {
-        if let existing = clipboardEntries.first(where: { $0.content.identity == content.identity }) {
-            if manual, let file = try DownloadIndex.read(existing.url) {
-                dismissed.remove(file.fingerprint)
-                UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
-                updateVisibleItems(); revealed = true
+    func attachClipboard(_ content: ClipboardContent, manual: Bool = false, now: Date = Date()) throws {
+        if let index = clipboardEntries.firstIndex(where: { $0.content.identity == content.identity }) {
+            let existing = clipboardEntries[index]
+            if manual || !expiration.includes(since: existing.capturedAt, now: now) {
+                clipboardEntries[index].capturedAt = now
+                if manual, let file = try DownloadIndex.read(existing.url) {
+                    dismissed.remove(file.fingerprint)
+                    UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
+                }
+                updateVisibleItems(now: now)
+                if manual { revealed = true }
             }
             return
         }
@@ -209,8 +231,9 @@ final class Line: ObservableObject {
             .appendingPathExtension(content.isText ? "txt" : "png")
         try content.data.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
-        clipboardEntries.insert(ClipboardEntry(content: content, url: url), at: 0)
-        updateVisibleItems(); revealed = true
+        clipboardEntries.insert(ClipboardEntry(content: content, url: url, capturedAt: now), at: 0)
+        updateVisibleItems(now: now)
+        if manual { revealed = true }
     }
 
     func clearClipboardStorage() {

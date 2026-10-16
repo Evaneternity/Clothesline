@@ -83,24 +83,28 @@ struct DownloadIndexTests {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let preferences = DisplayPreferences(defaults: defaults)
-        check(preferences.hoverDelay == 0.5, "default hover delay")
+        check(preferences.hoverDelay == 0, "default hover delay")
         preferences.hoverDelay = 1.26
         check(DisplayPreferences(defaults: defaults).hoverDelay == 1.3, "delay persists at 0.1s precision")
         preferences.hoverDelay = -1
         check(preferences.hoverDelay == 0, "negative delay clamped")
         preferences.hoverDelay = .infinity
-        check(preferences.hoverDelay == 0.5, "invalid delay falls back safely")
+        check(preferences.hoverDelay == 0, "invalid delay falls back safely")
         preferences.hoverDelay = 100
         check(preferences.hoverDelay == 10, "delay upper bound")
         let parent = URL(fileURLWithPath: "/tmp")
         let otherParent = URL(fileURLWithPath: "/tmp/another")
-        check(preferences.lifetime(for: parent) == 86400, "new folder defaults to 24 hours")
-        preferences.setLifetime(60, for: parent)
-        preferences.setLifetime(0, for: otherParent)
-        let restoredPreferences = DisplayPreferences(defaults: defaults)
-        check(restoredPreferences.lifetime(for: parent) == 60 && restoredPreferences.lifetime(for: otherParent) == 0,
-              "per-folder lifetimes and never-expire survive restart")
-        let policy = FolderExpirationPolicy(lifetimes: [parent.path: 60, otherParent.path: 0])
+        check(preferences.retentionLifetime == 0, "original default keeps items indefinitely")
+        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!.standardizedFileURL.path
+        defaults.set([downloads: 86400, otherParent.path: 3600], forKey: DisplayPreferences.legacyLifetimesKey)
+        check(preferences.retentionLifetime == 86400, "migration preserves the existing Downloads choice")
+        preferences.retentionLifetime = 60
+        check(DisplayPreferences(defaults: defaults).retentionLifetime == 60, "shared retention persists")
+        preferences.retentionLifetime = 0
+        check(preferences.retentionLifetime == 0, "explicit unlimited overrides legacy preferences")
+        preferences.retentionLifetime = -1
+        check(preferences.retentionLifetime == 0, "invalid retention falls back to original default")
+        let policy = ItemExpirationPolicy(lifetime: 60)
         let recent = file("recent.pdf")
         let expired = DownloadFile(url: parent.appendingPathComponent("old"), size: 0, modified: now,
                                    created: now.addingTimeInterval(-1000), added: now.addingTimeInterval(-60), isDirectory: true)
@@ -112,8 +116,9 @@ struct DownloadIndexTests {
         check(!policy.includes(noAddedDate, now: now), "missing entry date falls back to creation")
         let unlimited = DownloadFile(url: otherParent.appendingPathComponent("old.txt"), size: 1,
                                      modified: .distantPast, created: .distantPast, added: nil)
-        check(policy.includes(unlimited, now: now), "never-expire folder independent of others")
-        print("PASS: display preference persistence/precision, per-folder expiration boundaries and fallback")
+        check(!policy.includes(unlimited, now: now), "one retention applies to every automatic source")
+        check(ItemExpirationPolicy().includes(unlimited, now: now), "zero retention means never expire")
+        print("PASS: display preference persistence/precision, shared expiration boundaries and migration")
 
         var reveal = LineRevealController()
         func poll(_ time: Double, top: Bool = true, over: Bool = false, shown: Bool = false,

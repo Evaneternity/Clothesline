@@ -30,8 +30,7 @@ func testDisplayExpiration() throws {
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
     try bytes.write(to: directory.appendingPathComponent("child.txt"))
     try bytes.write(to: second)
-    preferences.setLifetime(60, for: shortFolder)
-    preferences.setLifetime(3600, for: longFolder)
+    preferences.retentionLifetime = 60
     let line = Line()
     var delivered: [DownloadFile] = []
     let monitors = FolderMonitors(defaults: isolated) { delivered = $0 }
@@ -56,20 +55,19 @@ func testDisplayExpiration() throws {
     precondition(line.items.contains { $0.id == originalID }, "expiration preserves dragged source")
     line.draggingID = nil
     line.updateVisibleItems(now: future)
-    precondition(line.items.count == 1 && line.items[0].file.path == second.standardizedFileURL.path,
-                 "files and folders expire together; other folder keeps its own lifetime")
-    precondition(line.recentFiles(matching: "", now: future).map(\.path) == [second.standardizedFileURL.path],
+    precondition(line.items.isEmpty, "files and folders across all monitors expire together")
+    precondition(line.recentFiles(matching: "", now: future).isEmpty,
                  "recent drawer also filters expired automatic entries")
     let firstBytes = try Data(contentsOf: first)
     let childBytes = try Data(contentsOf: directory.appendingPathComponent("child.txt"))
     precondition(firstBytes == bytes && childBytes == bytes, "expiration never touches original bytes")
-    preferences.setLifetime(3600, for: shortFolder)
+    preferences.retentionLifetime = 3600
     monitors.refresh()
     line.adopt(delivered, expiration: monitors.expirationPolicy)
     line.updateVisibleItems(now: future)
     precondition(line.items.count == 3, "increasing lifetime restores items without clearing dismissal records")
 
-    preferences.setLifetime(60, for: shortFolder)
+    preferences.retentionLifetime = 60
     line.adopt(delivered, expiration: monitors.expirationPolicy)
     let pinnedID = line.items.first { $0.file.path == first.standardizedFileURL.path }!.id
     line.togglePin(pinnedID)
@@ -97,14 +95,100 @@ func testDisplayExpiration() throws {
     line.adopt(fresh, expiration: monitors.expirationPolicy)
     let firstCard = line.items.first { $0.file.path == first.standardizedFileURL.path }!
     line.dismiss(firstCard.id)
-    preferences.setLifetime(0, for: shortFolder)
+    preferences.retentionLifetime = 0
     line.adopt(fresh, expiration: monitors.expirationPolicy)
     precondition(!line.items.contains { $0.file.path == first.standardizedFileURL.path }, "never-expire does not undo explicit dismissal")
 
     let settings = SettingsWindow()
-    settings.show(preferences: preferences, folders: monitors.folders, onChange: {})
+    settings.show(.hoverDelay, preferences: preferences, onChange: {})
     precondition(settings.window?.isVisible == true && settings.window?.contentView != nil,
-                 "native settings window opens with watched folders")
+                 "hover settings page opens")
+    settings.show(.retention, preferences: preferences, onChange: {})
+    precondition(settings.page == .retention && settings.window?.title == AppLanguage.text("保留文件时间", "Item Retention Time"),
+                 "retention opens a separate focused page")
     settings.window?.close()
+    // A session containing only clipboard items obeys the same display controls.
+    defaults.removeObject(forKey: "attachedFolderBookmarks")
+    defaults.removeObject(forKey: "dismissedFiles")
+    let clipboardLine = Line()
+    clipboardLine.setExpirationPolicy(ItemExpirationPolicy(lifetime: 60))
+    let board = NSPasteboard.withUniqueName()
+    defer { clipboardLine.clearClipboardStorage(); board.releaseGlobally() }
+    var capturedAt = Date().addingTimeInterval(-30)
+    let firstCapture = capturedAt
+    let intake = ClipboardMonitor(pasteboard: board, defaults: isolated) { content, manual in
+        try clipboardLine.attachClipboard(content, manual: manual, now: capturedAt)
+    }
+    intake.setTextEnabled(true)
+    intake.setImagesEnabled(true)
+    board.clearContents(); board.setString("clipboard timing note", forType: .string)
+    intake.poll()
+    precondition(!clipboardLine.revealed && clipboardLine.items.count == 1,
+                 "automatic note intake does not bypass hover delay")
+    let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2,
+                                  bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                  colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+    bitmap.setColor(.blue, atX: 0, y: 0)
+    let png = bitmap.representation(using: .png, properties: [:])!
+    board.clearContents(); board.setData(png, forType: .png)
+    intake.poll()
+    precondition(!clipboardLine.revealed && clipboardLine.items.count == 2,
+                 "automatic image intake also waits for pointer reveal")
+    let ownedURLs = clipboardLine.items.map(\.url)
+    let clipboardVersion = board.changeCount
+    clipboardLine.maxItems = 1; clipboardLine.updateVisibleItems()
+    precondition(clipboardLine.items.count == 1, "item count applies to clipboard content")
+    clipboardLine.maxItems = 8; clipboardLine.updateVisibleItems()
+    let noteID = clipboardLine.items.first { $0.noteText != nil }!.id
+
+    var reveal = LineRevealController()
+    func pointer(_ time: TimeInterval) -> Bool {
+        reveal.reveal(atTop: true, overLine: false, isRevealed: clipboardLine.revealed,
+                      hasItems: !clipboardLine.items.isEmpty, alwaysVisible: false, delay: 0.5, now: time)
+    }
+    precondition(!pointer(100) && !pointer(100.4), "clipboard-only rope waits for configured dwell")
+    clipboardLine.revealed = pointer(100.5)
+    precondition(clipboardLine.revealed, "clipboard-only rope opens after configured dwell")
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(59))
+    precondition(clipboardLine.items.count == 2, "clipboard items remain before boundary")
+    clipboardLine.pressedID = noteID
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(60))
+    precondition(clipboardLine.items.count == 2, "clipboard expiry retains pressed source")
+    clipboardLine.pressedID = nil; clipboardLine.draggingID = noteID
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(60))
+    precondition(clipboardLine.items.count == 2, "clipboard expiry retains dragged source")
+    clipboardLine.draggingID = nil
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(60))
+    precondition(clipboardLine.items.isEmpty && !pointer(101), "expired clipboard-only rope no longer opens")
+    precondition(board.changeCount == clipboardVersion && board.data(forType: .png) == png,
+                 "expiration does not change the system-equivalent pasteboard")
+    precondition(ownedURLs.allSatisfy { FileManager.default.fileExists(atPath: $0.path) },
+                 "expiration hides session files so increasing retention can restore them")
+    clipboardLine.setExpirationPolicy(ItemExpirationPolicy(lifetime: 120))
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(60))
+    precondition(clipboardLine.items.count == 2, "longer lifetime restores clipboard items")
+    clipboardLine.setExpirationPolicy(ItemExpirationPolicy())
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(100000))
+    precondition(clipboardLine.items.count == 2, "unlimited applies to clipboard items")
+    clipboardLine.setExpirationPolicy(ItemExpirationPolicy(lifetime: 60))
+    let currentNote = clipboardLine.items.first { $0.noteText != nil }!
+    try clipboardLine.editNote(currentNote.id, text: "edited timing note")
+    clipboardLine.interactionHeld = true
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(60))
+    precondition(clipboardLine.items.count == 2, "active note editor keeps its source until it closes")
+    clipboardLine.interactionHeld = false
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(60))
+    precondition(clipboardLine.items.isEmpty, "editing does not renew the clipboard capture time")
+    clipboardLine.revealed = false
+    capturedAt = firstCapture.addingTimeInterval(61)
+    board.clearContents(); board.setString("edited timing note", forType: .string); intake.poll()
+    precondition(clipboardLine.items.count == 1 && !clipboardLine.revealed,
+                 "copying expired content again renews its age without revealing the rope")
+    capturedAt = firstCapture.addingTimeInterval(71)
+    board.clearContents(); board.setString("edited timing note", forType: .string); intake.poll()
+    clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(121))
+    precondition(clipboardLine.items.isEmpty, "ordinary duplicates do not extend retention")
+    precondition(clipboardLine.recent.allSatisfy { !ownedURLs.contains($0.url) }, "clipboard history stays session-only")
+    print("PASS: clipboard image/note hover, item count, retention, no pasteboard changes, drag/editor hold, restore/unlimited and recapture")
     print("PASS: live multi-folder expiration, source safety, drag deferral, restore/unlimited, pins/manual/restart and settings window construction")
 }
