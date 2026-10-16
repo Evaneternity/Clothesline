@@ -67,7 +67,7 @@ func testAppServices() throws {
     precondition(menu.items.contains { $0.title == "About Clothesline…" })
     precondition(!menu.items.contains { $0.title == "Settings…" })
     let autoHideIndex = menu.items.firstIndex { $0.title == "Auto-hide Clothesline" }!
-    precondition(menu.items[autoHideIndex + 1].title == "Hover to Show Delay…")
+    precondition(menu.items[autoHideIndex + 1].title == "Hover to Show Clothesline Delay…")
     let countIndex = menu.items.firstIndex { $0.title == "Items to Keep" }!
     precondition(menu.items[countIndex + 1].title == "Item Retention Time…")
     let clipboard = menu.items.first { $0.title == "Clipboard" }!.submenu!
@@ -79,7 +79,7 @@ func testAppServices() throws {
     delegate.menuNeedsUpdate(menu)
     precondition(menu.items.contains { $0.title == "检查更新…" })
     precondition(!menu.items.contains { $0.title == "设置…" })
-    precondition(menu.items[menu.items.firstIndex { $0.title == "自动隐藏晾衣绳" }! + 1].title == "悬停显示延迟…")
+    precondition(menu.items[menu.items.firstIndex { $0.title == "自动隐藏晾衣绳" }! + 1].title == "悬停显示晾衣绳延迟…")
     precondition(menu.items[menu.items.firstIndex { $0.title == "保留文件数量" }! + 1].title == "保留文件时间…")
     precondition(ClosureMenuItem("快速预览", action: {}).title == "快速预览")
     AppLanguage.current = .english

@@ -33,8 +33,8 @@ The detailed features and usage instructions below primarily describe macOS; see
 ## Features
 
 - **Watch downloads**: Watch Downloads and multiple added folders, showing recent files and top-level folders. Watched folders persist across restarts; polling covers missed events and wake from sleep.
-- **Hover delay (macOS source build)**: Hover to Show Delay appears below Auto-hide Clothesline and opens its own editor with help text. Default: 0.0 seconds, matching the original app with no added delay; adjustable from 0.0–10.0 seconds in 0.1-second steps. Files, folders, clipboard images and notes all follow it. Automatic clipboard intake does not reveal the rope; an empty rope stays hidden in auto-hide mode.
-- **Item retention (macOS source build)**: Item Retention Time appears below Items to Keep. Its editor sets one lifetime in minutes/hours/days for watched files, folders and clipboard content. The original default is unlimited; existing retention preferences migrate, preferring Downloads. Files age from entry into their folder (creation time if unavailable), while clipboard items age from capture. Expiration only hides items without changing originals or the system clipboard. Pins and manually hung files are kept; increasing the lifetime restores clipboard content still in the session.
+- **Hover delay (macOS source build)**: Hover to Show Clothesline Delay appears below Auto-hide Clothesline and opens its own editor with help text. Default: 0.0 seconds, with no added delay; adjustable from 0.0–10.0 seconds in 0.1-second steps. Files, folders, clipboard images and notes all follow it. Automatic clipboard intake does not reveal the rope; an empty rope stays hidden in auto-hide mode.
+- **Item retention (macOS source build)**: Item Retention Time appears below Items to Keep. Its editor sets one lifetime in minutes/hours/days for watched files, folders and clipboard content. The default is unlimited; existing retention preferences migrate, preferring Downloads. Files age from entry into their folder (creation time if unavailable), while clipboard items age from capture. Expiration only hides items without changing originals or the system clipboard. Pins and manually hung files are kept; increasing the lifetime restores clipboard content still in the session.
 - **Detect completed downloads**: Filter hidden files, symbolic links, and temporary items such as `.crdownload`, `.download`, `.part`, and `.tmp`. Display files after two stable scans, at least two seconds without changes, and no companion temporary download.
 - **Hang files and folders**: Drag one or multiple items from Finder or select them from the menu. Store persistent references while originals stay in place.
 - **Preview and open**: Show document, image, and video thumbnails, with system icons for other types. Click for Quick Look, double-click to open in the default app, and open folders in Finder.
@@ -65,7 +65,7 @@ The hover and expiration settings are not included in the published rc.3 downloa
 | × / remove / clear | Hide cards; preserve original files |
 | Add watched folder (添加监控文件夹…) | Add folders while existing watchers continue |
 | Hang folder (挂上文件夹…) | Add folder shortcuts without moving them |
-| Hover to Show Delay / Item Retention Time (source build) | Separate editors with help, immediate saving and Restore Defaults |
+| Hover to Show Clothesline Delay / Item Retention Time (source build) | Separate editors with help, immediate saving and Restore Defaults |
 | Always visible / auto-hide | Save the display preference |
 | Show removed files again | Clear hidden-item records |
 | `⌃⌥T` | Toggle pinned visibility |

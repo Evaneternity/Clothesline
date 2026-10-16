@@ -8,7 +8,7 @@ final class SettingsWindow {
 
         var title: String {
             switch self {
-            case .hoverDelay: return AppLanguage.text("悬停显示延迟", "Hover to Show Delay")
+            case .hoverDelay: return AppLanguage.text("悬停显示晾衣绳延迟", "Hover to Show Clothesline Delay")
             case .retention: return AppLanguage.text("保留文件时间", "Item Retention Time")
             }
         }
@@ -69,7 +69,7 @@ private struct TimingSettingsView: View {
                     Spacer()
                     TextField("", value: $hoverDelay, format: .number.precision(.fractionLength(1)))
                         .frame(width: 70).multilineTextAlignment(.trailing)
-                        .accessibilityLabel(AppLanguage.text("悬停显示延迟（秒）", "Hover delay in seconds"))
+                        .accessibilityLabel(AppLanguage.text("悬停显示晾衣绳延迟（秒）", "Hover to show clothesline delay in seconds"))
                     Text(AppLanguage.text("秒", "seconds"))
                     Stepper("", value: $hoverDelay, in: 0...10, step: 0.1).labelsHidden()
                 }
@@ -77,8 +77,8 @@ private struct TimingSettingsView: View {
                     "鼠标在状态栏 / 屏幕顶部连续停留多久后显示晾衣绳。范围 0.0–10.0 秒，精度 0.1 秒；移开后重新计时。",
                     "Wait this long at the menu bar / top edge before showing the clothesline. Range: 0.0–10.0 seconds, in 0.1-second steps. Leaving resets the timer."))
                 Text(AppLanguage.text(
-                    "默认 0.0 秒，与原版一样不额外等待。文件、文件夹及剪贴板图片 / 文字便签均遵守此设置；自动隐藏模式下，无内容时不弹出。",
-                    "Default: 0.0 seconds, with no added delay, as in the original app. Applies to files, folders and clipboard images / notes. In auto-hide mode, an empty rope stays hidden."))
+                    "默认 0.0 秒，无需额外等待。文件、文件夹及剪贴板图片 / 文字便签均遵守此设置；自动隐藏模式下，无内容时不弹出。",
+                    "Default: 0.0 seconds, with no added delay. Applies to files, folders and clipboard images / notes. In auto-hide mode, an empty rope stays hidden."))
                     .foregroundStyle(.secondary)
             } else {
                 Toggle(AppLanguage.text("到期自动隐藏", "Automatically hide expired items"), isOn: $expires)
@@ -98,8 +98,8 @@ private struct TimingSettingsView: View {
                     "统一用于监控文件、文件夹和剪贴板图片 / 文字便签。文件按进入目录时间计算（缺失时按创建时间），剪贴板按捕获时间计算。",
                     "Applies to watched files, folders and clipboard images / notes. Files age from entry into their folder (creation time if unavailable); clipboard items age from capture."))
                 Text(AppLanguage.text(
-                    "范围 1 分钟–365 天；关闭后永不过期（原版默认）。到期只隐藏，原文件和系统剪贴板不变；固定、手动挂上的文件继续保留。",
-                    "Range: 1 minute–365 days. Turn off to keep indefinitely (the original default). Expiration only hides items; originals and the system clipboard are unchanged. Pinned and manually hung files are kept."))
+                    "范围 1 分钟–365 天；默认关闭，关闭后永不过期。到期只隐藏，原文件和系统剪贴板不变；固定、手动挂上的文件继续保留。",
+                    "Range: 1 minute–365 days. Off by default; items are kept indefinitely when off. Expiration only hides items; originals and the system clipboard are unchanged. Pinned and manually hung files are kept."))
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)

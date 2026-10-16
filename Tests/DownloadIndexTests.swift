@@ -94,7 +94,7 @@ struct DownloadIndexTests {
         check(preferences.hoverDelay == 10, "delay upper bound")
         let parent = URL(fileURLWithPath: "/tmp")
         let otherParent = URL(fileURLWithPath: "/tmp/another")
-        check(preferences.retentionLifetime == 0, "original default keeps items indefinitely")
+        check(preferences.retentionLifetime == 0, "default keeps items indefinitely")
         let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!.standardizedFileURL.path
         defaults.set([downloads: 86400, otherParent.path: 3600], forKey: DisplayPreferences.legacyLifetimesKey)
         check(preferences.retentionLifetime == 86400, "migration preserves the existing Downloads choice")
@@ -103,7 +103,7 @@ struct DownloadIndexTests {
         preferences.retentionLifetime = 0
         check(preferences.retentionLifetime == 0, "explicit unlimited overrides legacy preferences")
         preferences.retentionLifetime = -1
-        check(preferences.retentionLifetime == 0, "invalid retention falls back to original default")
+        check(preferences.retentionLifetime == 0, "invalid retention falls back to default")
         let policy = ItemExpirationPolicy(lifetime: 60)
         let recent = file("recent.pdf")
         let expired = DownloadFile(url: parent.appendingPathComponent("old"), size: 0, modified: now,

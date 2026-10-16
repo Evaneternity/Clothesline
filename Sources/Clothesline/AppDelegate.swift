@@ -229,7 +229,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let autoHide = ClosureMenuItem("自动隐藏晾衣绳") { [weak self] in self?.setAlwaysVisible(false) }
         autoHide.state = pinned ? .off : .on
         menu.addItem(autoHide)
-        menu.addItem(ClosureMenuItem("悬停显示延迟…") { [weak self] in self?.showSettings(.hoverDelay) })
+        menu.addItem(ClosureMenuItem("悬停显示晾衣绳延迟…") { [weak self] in self?.showSettings(.hoverDelay) })
         menu.addItem(ClosureMenuItem("挂上文件或文件夹…") { [weak self] in self?.attachFolder() })
         menu.addItem(ClosureMenuItem("最近文件…") { [weak self] in
             guard let self else { return }; self.recentDrawer.show(line: self.line)
