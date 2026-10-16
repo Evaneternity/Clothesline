@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let preferences = DisplayPreferences()
     private let settingsWindow = SettingsWindow()
     private var revealController = LineRevealController()
+    private let dragPasteboard = NSPasteboard(name: .drag)
+    private var fileDragTracker = ExternalFileDragTracker()
     private let missionControl = MissionControlAvoidance()
     private var avoidanceClearance: CGFloat = 0
     private var panel: LinePanel!
@@ -123,6 +125,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func pollPointer() {
         let now = ProcessInfo.processInfo.systemUptime
+        let externalDragging = fileDragTracker.update(
+            isPressed: NSEvent.pressedMouseButtons & 1 != 0,
+            changeCount: dragPasteboard.changeCount,
+            hasFileURLs: dragPasteboard.types?.contains(.fileURL) == true)
         // AppKit owns mouse tracking from mouseDown through the drag session.
         // Do not turn the source window click-through, hide/reposition it, or
         // move it to another screen while that tracking is in progress.
@@ -145,7 +151,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             avoidanceClearance = 0
         }
         let mouse = NSEvent.mouseLocation
-        let externalDragging = NSEvent.pressedMouseButtons & 1 != 0
         let bounds = MissionControlAvoidance.windowBounds(
             for: screen.frame, primaryFrame: NSScreen.screens.first?.frame ?? screen.frame)
         let clearance = missionControl.clearance(for: bounds, now: now,
@@ -166,9 +171,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let top = screen.visibleFrame.maxY
         let atScreenTop = mouse.y >= top - 4 && mouse.y <= screen.frame.maxY + 1
         let avoidingMissionControl = avoidanceClearance > 0
-        // Show a reachable target during a drag even when there are no recent
-        // items. Ordinary empty-rope hover behavior remains unchanged.
-        let atTop = atScreenTop || (avoidingMissionControl && (externalDragging || panel.frame.contains(mouse)))
         // Convert AppKit's bottom-up screen coordinates to SwiftUI's top-down
         // hosting-view coordinates, as used by HitRectsKey.
         let local = CGPoint(x: mouse.x - panel.frame.minX,
@@ -187,15 +189,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let overPanel = panel.frame.contains(mouse)
 
         let shouldReveal = revealController.reveal(
-            atTop: atTop, overLine: overPanel || overCard, isRevealed: line.revealed,
+            atTop: atScreenTop, overLine: overPanel || overCard, isRevealed: line.revealed,
             hasItems: !line.items.isEmpty, alwaysVisible: pinned,
             interactionHeld: panel.isReturning,
-            externalDrag: externalDragging,
-            delay: avoidingMissionControl && externalDragging ? 0 : preferences.hoverDelay, now: now)
+            externalDrag: externalDragging, avoidingMissionControl: avoidingMissionControl,
+            delay: preferences.hoverDelay, now: now)
         if shouldReveal != line.revealed { line.revealed = shouldReveal }
         if !shouldReveal { identityPanel.hide() }
         // During an external mouse drag, expose the full rope as a drop target.
-        let externalDrag = NSEvent.pressedMouseButtons & 1 != 0 && line.draggingID == nil
+        let externalDrag = externalDragging && line.draggingID == nil
         panel.ignoresMouseEvents = !shouldReveal || (!overCard && !externalDrag)
     }
 

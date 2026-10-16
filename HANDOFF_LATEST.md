@@ -1,4 +1,17 @@
-# 最新交接：Mission Control 退出复位动画
+# 最新交接：总览内隐藏后退出误展开
+
+2026-10-16。用户报告隐藏后点击 Mission Control 空白处退出，会再显示再隐藏。只读本地采样确认重新显示发生在退出前的普通按下事件，且用户补充退出方式为点击空白处。
+
+## 本轮改动与验证
+- 外部文件拖拽不再等同于全局左键按下。ExternalFileDragTracker 记录专用拖拽粘贴板在松开时的 changeCount，只接受按下期间产生的新会话及 file URL 类型。旧拖拽数据残留不会把后续点击当成拖拽，不读文件内容或系统剪贴板载荷。
+- 总览内的展开规则集中到 LineRevealController：真实文件拖拽可在远离顶部时立即展开；隐藏面板透明区域不能触发悬停展开。AppDelegate 的窗口鼠标穿透也使用同一文件拖拽判定。
+- Tests/MissionControlRevealTests.swift 复现 drag → drop → leave → hide → click → exit，分别覆盖透明区域内外，接入核心测试。修复前两类失败依次复现，修复后通过；另覆盖旧数据、非文件拖拽、延后提供类型、再次拖入、空绳和普通顶部悬停。
+- 用户现场确认“已修复：能拖入，退出后保持隐藏”。reveal-after.jsonl 交叉验证：总览内隐藏后，点击空白处时 leftButton=true、fileDragging=false，revealed 保持 false，退出也保持 false；后续新拖拽和普通顶部悬停可正常展开。人机复现脚本从退出码 1 变为 0。
+- 本轮临时探针仅记录布尔状态和坐标，已从源码移除并停止采样，副本与现场数据保存在被忽略的 build/debug-mission-control/。
+- 核心/macOS 测试、Universal Release 构建及严格双架构签名通过；已重启为无探针的 build/Clothesline.app。二进制 SHA-256：6d32db4f76568bbec3f74a4dad10e85e9e983e015d647c4db3d09bd48fee00ee。
+- 继续使用 feature/mission-control-avoidance；已有 PR #2/#3、/Applications 安装包和 Release 保持不变。
+
+## 前轮：Mission Control 退出复位动画
 
 2026-10-16。用户已确认检测修复后的真实 Finder 拖入及退出复位，随后要求放慢回到顶部的动作。当前仍在 feature/mission-control-avoidance。
 

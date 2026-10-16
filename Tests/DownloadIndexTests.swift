@@ -152,5 +152,6 @@ struct DownloadIndexTests {
         check(reveal.reveal(atTop: true, overLine: false, isRevealed: false, hasItems: false,
                             alwaysVisible: false, externalDrag: true, delay: 0.5, now: 51), "intentional Finder drag can populate an empty rope")
         print("PASS: delayed reveal, hover cancellation, empty suppression, drag hold and always-visible")
+        try testMissionControlHiddenReveal()
     }
 }
