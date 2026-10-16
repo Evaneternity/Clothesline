@@ -5,6 +5,7 @@ import Foundation
 struct MacIntegrationTests {
     @MainActor static func main() throws {
         _ = NSApplication.shared
+        try testHoverSettings()
         let defaults = UserDefaults.standard
         let keys = ["dismissedFiles", "attachedFolderBookmarks", "alwaysShowLine", "recentFileBookmarks", "pinnedFiles", "menuLanguage"]
         let saved = keys.map { defaults.object(forKey: $0) }

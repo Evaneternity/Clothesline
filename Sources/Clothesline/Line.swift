@@ -200,7 +200,8 @@ final class Line: ObservableObject {
         try content.data.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         clipboardEntries.insert(ClipboardEntry(content: content, url: url), at: 0)
-        updateVisibleItems(); revealed = true
+        updateVisibleItems()
+        if manual { revealed = true }
     }
 
     func clearClipboardStorage() {

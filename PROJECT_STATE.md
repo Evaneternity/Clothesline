@@ -3,6 +3,12 @@
 更新：2026-10-13（Asia/Shanghai）
 状态：本地候选版；Release 构建、核心与 macOS 集成测试通过，完整 UI 验收待完成。
 
+## 悬停显示晾衣绳延迟（2026-10-16，macOS 源码开发版）
+
+在“自动隐藏晾衣绳”下方提供独立悬停延迟编辑页，范围 0.0–10.0 秒、精度 0.1 秒、默认 0.0 秒。离开顶部、切换屏幕或唤醒后重新计时；自动剪贴板接入遵守悬停规则。空绳保持隐藏，显式固定及拖入入口保留；右键菜单跟踪期间保护操作目标。
+
+验证通过：scripts/test-core.sh、scripts/test-macos.sh、scripts/build-app.sh release native。覆盖偏好持久化、计时边界、取消/重置、空绳、拖拽保护、剪贴板图片/文字、右键菜单生命周期和双语菜单位置。真实上下双屏鼠标移动及睡眠恢复仍需人工验收。 本分支以 d48feca 为基线，可单独构建，不依赖其他功能分支。Windows 与发行资产未改动。
+
 ## 架构与功能
 SwiftPM 可执行目标，macOS 14+；AppKit 浮层与菜单栏、SwiftUI 卡片、Quick Look、Carbon 快捷键。DownloadsWatcher 使用 vnode 事件及 2 秒轮询；DownloadIndex 扫描顶层文件与目录，排除隐藏项、符号链接及临时下载名，使用两次稳定样本和 2 秒静默期。
 
