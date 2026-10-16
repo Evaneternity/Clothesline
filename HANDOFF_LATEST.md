@@ -5,7 +5,9 @@
 - LineRevealController 的保持分支改为 lastInside = isRevealed ? now : nil，只延续可见状态。
 - Tests/MissionControlReturnTests.swift 将实际 LinePanel 与状态机组合，在动画中隐藏并轮询超过动画和宽限时间；同一回归先失败后通过。核心状态测试同步覆盖隐藏保持释放。
 - 完整核心/macOS 测试、Universal Release 构建及严格双架构签名通过，已重启 build/Clothesline.app，SHA-256：37aa6fb2fee48f65f00981c163aa6b8d90002f4fc8b4ad5c009cb3de5eeac78c。未声称本轮人工 Mission Control UI 验收。
-- 独立 PR 在 ../Clothesline-pr-mission-control 工作树、fix/mission-control-occlusion 分支准备，直接基于上游 main，不包含已有设置/复制 PR 的功能。用户要求 PR 明确“仅 macOS 27 验证，其他版本未测试，仅供参考，请谨慎合并”。
+- 独立 PR #4 已创建：https://github.com/zhongguozhang/Clothesline/pull/4 。位于 ../Clothesline-pr-mission-control 工作树、fix/mission-control-occlusion 分支，提交 3e92c6f，直接基于上游 main，不包含已有设置/复制 PR 的功能。已核对个人 fork 远端 SHA 和 PR head。
+- 独立提取补齐 common-mode 轮询所需的右键菜单源保护；回归先失败后通过。Standards/Spec 复核无剩余问题；独立分支核心/macOS 测试、arm64 Release 构建和严格签名通过，未重新进行人工 UI 验收。
+- PR 明确“仅 macOS 27.0.1 实测，其他版本未测试，仅供参考，请谨慎合并”，并说明与 PR #2 指针轮询逻辑重叠。PR 未合并，未发布 Release。
 
 ## 前轮：总览内隐藏后退出误展开
 
