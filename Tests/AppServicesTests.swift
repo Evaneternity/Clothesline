@@ -65,6 +65,7 @@ func testAppServices() throws {
     precondition(menu.items.contains { $0.title == "Launch at Login" })
     precondition(menu.items.contains { $0.title == "Check for Updates…" })
     precondition(menu.items.contains { $0.title == "About Clothesline…" })
+    precondition(menu.items.contains { $0.title == "Settings…" })
     let clipboard = menu.items.first { $0.title == "Clipboard" }!.submenu!
     precondition(clipboard.items.filter { !$0.isSeparatorItem }.count == 3)
     let languages = menu.items.first { $0.title == "Language / 语言" }!.submenu!
@@ -73,6 +74,7 @@ func testAppServices() throws {
     precondition(AppLanguage.current == .chinese, "menu action switches language")
     delegate.menuNeedsUpdate(menu)
     precondition(menu.items.contains { $0.title == "检查更新…" })
+    precondition(menu.items.contains { $0.title == "设置…" })
     precondition(ClosureMenuItem("快速预览", action: {}).title == "快速预览")
     AppLanguage.current = .english
     precondition(UserDefaults.standard.string(forKey: "menuLanguage") == "en")

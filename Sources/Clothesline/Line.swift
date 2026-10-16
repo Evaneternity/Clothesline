@@ -50,6 +50,8 @@ final class Line: ObservableObject {
     }
     private var pins: [Pin] = []
     private var latest: [DownloadFile] = []
+    // Each scan also refreshes an open recent-files drawer as wall time advances.
+    @Published private var expiration = FolderExpirationPolicy()
     @Published private(set) var recent: [DownloadFile] = []
     var interactionHeld = false
     private var attachedFolders: [URL] = []
@@ -84,20 +86,23 @@ final class Line: ObservableObject {
         }
     }
 
-    func adopt(_ files: [DownloadFile]) {
+    func adopt(_ files: [DownloadFile], expiration: FolderExpirationPolicy = FolderExpirationPolicy()) {
         latest = files
+        self.expiration = expiration
         remember(files)
         // A completion scan can temporarily be empty at startup or while a
         // file changes. It is not evidence that dismissed files were deleted.
         updateVisibleItems()
     }
 
-    func updateVisibleItems() {
+    func updateVisibleItems(now: Date = Date()) {
         // Preserve the AppKit drag source even when the Downloads scan changes.
         guard pressedID == nil, draggingID == nil else { return }
         let attached = attachedFolders.compactMap { try? DownloadIndex.read($0) }
         let attachedPaths = Set(attached.map(\.path))
-        let originalFiles = attached + latest.filter { !attachedPaths.contains($0.path) }
+        let originalFiles = attached + latest.filter {
+            !attachedPaths.contains($0.path) && expiration.includes($0, now: now)
+        }
         remember(originalFiles)
         let clipboardFiles = clipboardEntries.compactMap { try? DownloadIndex.read($0.url) }
         let combined = clipboardFiles + originalFiles
@@ -108,7 +113,12 @@ final class Line: ObservableObject {
         }
         let pinPaths = Set(pins.map { $0.file.path })
         // Missing source cards remain explicit instead of silently disappearing.
-        let missing = items.filter { !$0.isClipboard && !pinPaths.contains($0.file.path) && (try? DownloadIndex.read($0.url)) == nil }.map(\.file)
+        let manualPaths = Set(attachedFolders.map { $0.standardizedFileURL.path })
+        let missing = items.filter {
+            !$0.isClipboard && !pinPaths.contains($0.file.path) &&
+            (manualPaths.contains($0.file.path) || expiration.includes($0.file, now: now)) &&
+            (try? DownloadIndex.read($0.url)) == nil
+        }.map(\.file)
         var unique: [String: DownloadFile] = [:]
         for file in combined + missing { unique[file.path] = (try? DownloadIndex.read(file.url)) ?? file }
         let ordinary = (combined + missing).compactMap { unique.removeValue(forKey: $0.path) }
@@ -324,9 +334,11 @@ final class Line: ObservableObject {
         UserDefaults.standard.set(bookmarks, forKey: "recentFileBookmarks")
     }
 
-    func recentFiles(matching query: String) -> [DownloadFile] {
-        recent.filter { query.isEmpty || $0.url.lastPathComponent.localizedCaseInsensitiveContains(query) }
+    func recentFiles(matching query: String, now: Date = Date()) -> [DownloadFile] {
+        let keptPaths = Set(attachedFolders.map { $0.standardizedFileURL.path } + pins.map { $0.file.path })
+        return recent.filter { query.isEmpty || $0.url.lastPathComponent.localizedCaseInsensitiveContains(query) }
             .compactMap { try? DownloadIndex.read($0.url) }
+            .filter { keptPaths.contains($0.path) || expiration.includes($0, now: now) }
     }
 
     func rename(_ id: UUID, stem: String) throws {

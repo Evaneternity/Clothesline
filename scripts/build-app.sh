@@ -21,6 +21,8 @@ case "$TARGET" in
 esac
 scripts/test-core.sh
 BINARIES=()
+BINARY_STAGING="$(mktemp -d)"
+trap 'rm -rf "$BINARY_STAGING"' EXIT
 for ARCH in "${ARCHITECTURES[@]}"; do
   if ! swift build -c "$CONFIG" --arch "$ARCH"; then
     # On some CLT-only macOS 27 installations SwiftUI SDK macro plugins may be
@@ -41,7 +43,10 @@ for ARCH in "${ARCHITECTURES[@]}"; do
   fi
   BINDIR="$(swift build -c "$CONFIG" --arch "$ARCH" --show-bin-path)"
   xcrun lipo "$BINDIR/Clothesline" -verify_arch "$ARCH"
-  BINARIES+=("$BINDIR/Clothesline")
+  # Swift 6.4's swiftbuild engine shares the product path across architectures.
+  # Keep each verified binary before the next build overwrites that path.
+  cp "$BINDIR/Clothesline" "$BINARY_STAGING/Clothesline-$ARCH"
+  BINARIES+=("$BINARY_STAGING/Clothesline-$ARCH")
 done
 APP="build/Clothesline.app"
 rm -rf "$APP"
@@ -51,7 +56,9 @@ if [[ "${#BINARIES[@]}" -gt 1 ]]; then
 else
   cp "${BINARIES[0]}" "$APP/Contents/MacOS/Clothesline"
 fi
-xcrun lipo "$APP/Contents/MacOS/Clothesline" -verify_arch "${ARCHITECTURES[@]}"
+for ARCH in "${ARCHITECTURES[@]}"; do
+  xcrun lipo "$APP/Contents/MacOS/Clothesline" -verify_arch "$ARCH"
+done
 cp LICENSE "$APP/Contents/Resources/LICENSE"
 
 # Generate an original Clothesline icon from a PNG bundled with this project.

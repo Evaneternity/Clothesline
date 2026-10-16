@@ -33,6 +33,8 @@ The detailed features and usage instructions below primarily describe macOS; see
 ## Features
 
 - **Watch downloads**: Watch Downloads and multiple added folders, showing recent files and top-level folders. Watched folders persist across restarts; polling covers missed events and wake from sleep.
+- **Hover delay (macOS source build)**: Menu → Settings configures a 0.0–10.0-second delay in 0.1-second steps, defaulting to 0.5 seconds. Leaving the menu bar / top edge resets the timer; an empty clothesline stays hidden in automatic mode.
+- **Watched item expiration (macOS source build)**: Each folder has its own retention period, defaulting to 24 hours, with custom minutes/hours/days or no expiration. Age starts at entry into the directory, falling back to creation time. Expired automatic files and folders disappear from the rope and recent-files list without changing originals. Pins, manual attachments and clipboard items are kept. Changes apply immediately; restarting does not renew item age.
 - **Detect completed downloads**: Filter hidden files, symbolic links, and temporary items such as `.crdownload`, `.download`, `.part`, and `.tmp`. Display files after two stable scans, at least two seconds without changes, and no companion temporary download.
 - **Hang files and folders**: Drag one or multiple items from Finder or select them from the menu. Store persistent references while originals stay in place.
 - **Preview and open**: Show document, image, and video thumbnails, with system icons for other types. Click for Quick Look, double-click to open in the default app, and open folders in Finder.
@@ -47,11 +49,13 @@ The detailed features and usage instructions below primarily describe macOS; see
 - **Safe removal**: Taking cards down, clearing, or quitting does not delete, move, or overwrite originals. Only a separately confirmed Move to Trash action moves files or folders and their contents; restore them in Finder. Reset hidden records to show removed files again; replacing a download also allows it to reappear.
 - **Flexible display**: Alternating colorful clothespins and spring animations, automatic hiding or always-visible mode, adjustable item counts and card size, and saved preferences. Use `⌃⌥T` to toggle visibility.
 
+The hover and expiration settings are not included in the published rc.3 download. Always Show and intentional file drags can still reveal an empty rope.
+
 ## Quick reference
 
 | Action | Result |
 |---|---|
-| Hover at the top of the screen / menu bar | Show the clothesline |
+| Hover at the top of the screen / menu bar | Wait for the configured delay; stay hidden when empty (source build) |
 | Move the pointer away | Hide it in automatic mode |
 | Click a file | Quick Look preview |
 | Double-click | Open with the default app; folders open in Finder |
@@ -61,6 +65,7 @@ The detailed features and usage instructions below primarily describe macOS; see
 | × / remove / clear | Hide cards; preserve original files |
 | Add watched folder (添加监控文件夹…) | Add folders while existing watchers continue |
 | Hang folder (挂上文件夹…) | Add folder shortcuts without moving them |
+| Settings (source build) | Save hover delay and retention for each watched folder |
 | Always visible / auto-hide | Save the display preference |
 | Show removed files again | Clear hidden-item records |
 | `⌃⌥T` | Toggle pinned visibility |
