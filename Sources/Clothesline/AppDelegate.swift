@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let preferences = DisplayPreferences()
     private let settingsWindow = SettingsWindow()
     private var revealController = LineRevealController()
+    private let missionControl = MissionControlAvoidance()
+    private var avoidanceClearance: CGFloat = 0
     private var panel: LinePanel!
     private var statusItem: NSStatusItem!
     private var monitors: FolderMonitors?
@@ -74,6 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
                     self?.revealController.reset()
+                    self?.missionControl.reset()
                     self?.monitors?.wake()
                 }
             }
@@ -134,12 +137,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             revealController.reset()
             if !pinned { line.revealed = false }
             currentScreen = screen
-            panel.placeOnScreen(screen)
-            recalculateCapacity()
+            avoidanceClearance = 0
         }
         let mouse = NSEvent.mouseLocation
+        let externalDragging = NSEvent.pressedMouseButtons & 1 != 0
+        let bounds = MissionControlAvoidance.windowBounds(
+            for: screen.frame, primaryFrame: NSScreen.screens.first?.frame ?? screen.frame)
+        let clearance = missionControl.clearance(for: bounds, now: now,
+                                                responsive: pinned || line.revealed || externalDragging || avoidanceClearance > 0)
+        // Once lowered, don't move the drop target upward under an ongoing
+        // Finder drag, even if moving away from the edge closes Mission Control.
+        avoidanceClearance = externalDragging ? max(avoidanceClearance, clearance) : clearance
+        if panel.placeOnScreen(screen, avoidingTop: avoidanceClearance) {
+            identityPanel.hide()
+            recalculateCapacity()
+            if line.revealed {
+                _ = revealController.reveal(atTop: false, overLine: false, isRevealed: true,
+                                            hasItems: !line.items.isEmpty, alwaysVisible: pinned,
+                                            interactionHeld: true, delay: preferences.hoverDelay, now: now)
+            }
+        }
         let top = screen.visibleFrame.maxY
-        let atTop = mouse.y >= top - 4 && mouse.y <= screen.frame.maxY + 1
+        let atScreenTop = mouse.y >= top - 4 && mouse.y <= screen.frame.maxY + 1
+        let avoidingMissionControl = avoidanceClearance > 0
+        // Show a reachable target during a drag even when there are no recent
+        // items. Ordinary empty-rope hover behavior remains unchanged.
+        let atTop = atScreenTop || (avoidingMissionControl && (externalDragging || panel.frame.contains(mouse)))
         // Convert AppKit's bottom-up screen coordinates to SwiftUI's top-down
         // hosting-view coordinates, as used by HitRectsKey.
         let local = CGPoint(x: mouse.x - panel.frame.minX,
@@ -148,7 +171,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let hovered = line.items.first { item in
             line.hitRects[item.id]?.contains(local) == true
         }
-        let externalDragging = NSEvent.pressedMouseButtons & 1 != 0
         if line.revealed, !externalDragging, let item = hovered, let rect = line.hitRects[item.id] {
             let anchor = NSRect(x: panel.frame.minX + rect.minX,
                                 y: panel.frame.maxY - rect.maxY,
@@ -160,7 +182,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let shouldReveal = revealController.reveal(
             atTop: atTop, overLine: overPanel || overCard, isRevealed: line.revealed,
             hasItems: !line.items.isEmpty, alwaysVisible: pinned,
-            externalDrag: externalDragging, delay: preferences.hoverDelay, now: now)
+            externalDrag: externalDragging,
+            delay: avoidingMissionControl && externalDragging ? 0 : preferences.hoverDelay, now: now)
         if shouldReveal != line.revealed { line.revealed = shouldReveal }
         if !shouldReveal { identityPanel.hide() }
         // During an external mouse drag, expose the full rope as a drop target.
@@ -173,7 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         UserDefaults.standard.set(enabled, forKey: "alwaysShowLine")
         revealController.reset()
         if pinned {
-            panel?.placeOnScreen()
+            panel?.placeOnScreen(avoidingTop: avoidanceClearance)
             line.revealed = true
         } else {
             line.revealed = false
@@ -285,8 +308,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             switch size { case .small: title = "小"; case .medium: title = "中"; case .large: title = "大" }
             let item = ClosureMenuItem(title) { [weak self] in
                 Layout.size = size
-                self?.panel.placeOnScreen()
-                self?.recalculateCapacity()
+                guard let self else { return }
+                self.panel.placeOnScreen(avoidingTop: self.avoidanceClearance)
+                self.recalculateCapacity()
             }
             item.state = Layout.size == size ? .on : .off
             sizeSubmenu.addItem(item)

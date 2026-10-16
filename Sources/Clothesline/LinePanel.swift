@@ -30,10 +30,25 @@ final class LinePanel: NSPanel {
             ?? NSScreen.main ?? NSScreen.screens.first
     }
 
-    func placeOnScreen(_ screen: NSScreen? = nil) {
-        guard let frame = (screen ?? Self.screenUnderPointer())?.visibleFrame else { return }
-        let target = NSRect(x: frame.minX, y: frame.maxY - Layout.panelHeight,
-                            width: frame.width, height: Layout.panelHeight)
-        if self.frame != target { setFrame(target, display: true) }
+    @discardableResult
+    func placeOnScreen(_ screen: NSScreen? = nil, avoidingTop clearance: CGFloat = 0) -> Bool {
+        guard let screen = screen ?? Self.screenUnderPointer() else { return false }
+        let target = Self.placement(screenFrame: screen.frame, visibleFrame: screen.visibleFrame,
+                                    height: Layout.panelHeight, clearance: clearance)
+        // Mission Control's Dock surfaces sit above ordinary floating windows.
+        // Raise only while avoiding them, and keep the Spaces strip unobstructed.
+        let targetLevel: NSWindow.Level = clearance > 0 ? .statusBar : .floating
+        let changed = frame != target || level != targetLevel
+        if level != targetLevel { level = targetLevel }
+        if frame != target { setFrame(target, display: true) }
+        return changed
+    }
+
+    static func placement(screenFrame: CGRect, visibleFrame: CGRect,
+                          height: CGFloat, clearance: CGFloat) -> CGRect {
+        let height = min(height, visibleFrame.height)
+        let top = min(visibleFrame.maxY, screenFrame.maxY - max(0, clearance))
+        return CGRect(x: visibleFrame.minX, y: max(visibleFrame.minY, top - height),
+                      width: visibleFrame.width, height: height)
     }
 }

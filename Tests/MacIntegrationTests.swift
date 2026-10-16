@@ -18,6 +18,7 @@ struct MacIntegrationTests {
         AppLanguage.current = .chinese
         try testAppServices()
         try testDisplayExpiration()
+        testMissionControlAvoidance()
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Clothesline-acceptance-\(UUID())")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
