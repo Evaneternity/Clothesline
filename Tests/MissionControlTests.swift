@@ -2,7 +2,7 @@ import AppKit
 
 @MainActor
 func testMissionControlAvoidance() {
-    typealias Window = MissionControlAvoidance.DockWindow
+    typealias Window = MissionControlAvoidance.SystemWindow
     let primary = CGRect(x: 0, y: 0, width: 1728, height: 1117)
     let upperAppKit = CGRect(x: -438, y: 1117, width: 2048, height: 1152)
     let upper = MissionControlAvoidance.windowBounds(for: upperAppKit, primaryFrame: primary)
@@ -45,9 +45,25 @@ func testMissionControlAvoidance() {
     otherApp[kCGWindowOwnerPID as String] = NSNumber(value: 43)
     var malformed = dockInfo
     malformed.removeValue(forKey: kCGWindowBounds as String)
-    let parsed = MissionControlAvoidance.dockWindows(in: [otherApp, malformed, dockInfo], ownerPID: 42)
+    let parsed = MissionControlAvoidance.systemWindows(in: [otherApp, malformed, dockInfo], owners: [42: .dock])
     precondition(parsed.count == 1 && parsed[0].bounds == primary,
                  "only Dock-owned, valid metadata participates; window titles are unnecessary")
+
+    var managerInfo = dockInfo
+    managerInfo[kCGWindowOwnerPID as String] = NSNumber(value: 43)
+    managerInfo[kCGWindowLayer as String] = 19
+    let bothOwners = MissionControlAvoidance.systemWindows(in: [dockInfo, managerInfo],
+                                                           owners: [42: .dock, 43: .windowManager])
+    precondition(bothOwners.map(\.owner) == [.dock, .windowManager],
+                 "window ownership survives decoding so layers have process-specific meanings")
+    let showDesktop = Window(layer: 18, bounds: primary, owner: .windowManager)
+    let stageIcon = Window(layer: 19, bounds: CGRect(x: 2823, y: 771, width: 66, height: 82), owner: .windowManager)
+    precondition(MissionControlAvoidance.clearance(for: primary, windows: [showDesktop, stageIcon]) == 0,
+                 "WindowManager Show Desktop and small off-screen Stage Manager icons do not trigger avoidance")
+    let managerOverview = Window(layer: 19, bounds: upper, owner: .windowManager)
+    precondition(MissionControlAvoidance.clearance(for: upper, windows: [managerOverview]) > 0 &&
+                 MissionControlAvoidance.clearance(for: primary, windows: [managerOverview]) == 0,
+                 "macOS 27 overview without a separate bar uses a fallback only on the affected screen")
 
     var samples = 0
     var observed = fullOverview

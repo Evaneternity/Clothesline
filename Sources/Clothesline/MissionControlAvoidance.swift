@@ -2,19 +2,25 @@ import AppKit
 
 /// Best-effort detection using public window metadata, without reading window
 /// titles, capturing the screen, requesting permissions, or using private APIs.
-/// Dock's window layers are undocumented and may change between macOS releases.
+/// System window layers are undocumented and may change between macOS releases.
 @MainActor
 final class MissionControlAvoidance {
-    struct DockWindow {
-        let layer: Int
-        let bounds: CGRect
+    enum Owner: String {
+        case dock = "com.apple.dock"
+        case windowManager = "com.apple.WindowManager"
     }
 
-    private let readWindows: @MainActor () -> [DockWindow]
-    private var windows: [DockWindow] = []
+    struct SystemWindow {
+        let layer: Int
+        let bounds: CGRect
+        var owner: Owner = .dock
+    }
+
+    private let readWindows: @MainActor () -> [SystemWindow]
+    private var windows: [SystemWindow] = []
     private var checkedAt: TimeInterval?
 
-    init(readWindows: @escaping @MainActor () -> [DockWindow] = { MissionControlAvoidance.dockWindows() }) {
+    init(readWindows: @escaping @MainActor () -> [SystemWindow] = { MissionControlAvoidance.systemWindows() }) {
         self.readWindows = readWindows
     }
 
@@ -41,46 +47,58 @@ final class MissionControlAvoidance {
                width: screenFrame.width, height: screenFrame.height)
     }
 
-    static func clearance(for screen: CGRect, windows: [DockWindow]) -> CGFloat {
+    static func clearance(for screen: CGRect, windows: [SystemWindow]) -> CGFloat {
         guard screen.width > 0, screen.height > 0 else { return 0 }
-        var clearance: CGFloat = 0
-        for window in windows where window.layer == 18 || window.layer == 20 {
+        var stripClearance: CGFloat = 0
+        var hasOverviewSurface = false
+        for window in windows {
             let bounds = window.bounds
             guard bounds.width.isFinite, bounds.height.isFinite,
                   bounds.minX.isFinite, bounds.minY.isFinite,
                   bounds.maxY.isFinite,
                   bounds.width >= screen.width * 0.9,
                   bounds.intersection(screen).width >= screen.width * 0.9 else { continue }
-            if window.layer == 18 && bounds.intersection(screen).height >= screen.height * 0.9 {
-                // Full Mission Control / App Exposé uses a screen-sized layer
-                // 18 surface. Its strip may not have separate window bounds.
-                clearance = max(clearance, min(280, max(160, screen.height * 0.22)))
-            } else if abs(bounds.minY - screen.minY) <= 24,
+            let overviewLayer = window.owner == .windowManager ? 19 : 18
+            let isStripLayer = window.owner == .windowManager
+                ? window.layer == 14 : (window.layer == 18 || window.layer == 20)
+            if window.layer == overviewLayer && bounds.intersection(screen).height >= screen.height * 0.9 {
+                // macOS 27 moved the overview from Dock to WindowManager.
+                // Requiring display coverage excludes small Stage Manager icons.
+                hasOverviewSurface = true
+            } else if isStripLayer, abs(bounds.minY - screen.minY) <= 24,
                       bounds.height >= 32 && bounds.height <= screen.height * 0.4 {
-                // A wide, shallow Dock surface at this display's top edge:
-                // the Spaces strip shown during a Finder drag.
-                clearance = max(clearance, bounds.maxY - screen.minY + 16)
+                stripClearance = max(stripClearance, bounds.maxY - screen.minY + 16)
             }
             // A full-screen layer 20 surface alone is also present on an idle
             // desktop on recent macOS versions, so it is deliberately ignored.
         }
-        return clearance
+        // Prefer the actual Spaces bar boundary over a proportional estimate.
+        // WindowManager layer 18 is Show Desktop, so it must not trigger this.
+        if stripClearance > 0 { return stripClearance }
+        return hasOverviewSurface ? min(280, max(160, screen.height * 0.22)) : 0
     }
 
-    static func dockWindows() -> [DockWindow] {
-        guard let dock = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock").first,
+    static func systemWindows() -> [SystemWindow] {
+        var owners: [pid_t: Owner] = [:]
+        for app in NSWorkspace.shared.runningApplications {
+            if let bundleID = app.bundleIdentifier, let owner = Owner(rawValue: bundleID) {
+                owners[app.processIdentifier] = owner
+            }
+        }
+        guard !owners.isEmpty,
               let info = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]]
         else { return [] }
-        return dockWindows(in: info, ownerPID: dock.processIdentifier)
+        return systemWindows(in: info, owners: owners)
     }
 
-    static func dockWindows(in info: [[String: Any]], ownerPID: pid_t) -> [DockWindow] {
+    static func systemWindows(in info: [[String: Any]], owners: [pid_t: Owner]) -> [SystemWindow] {
         info.compactMap { window in
-            guard (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == ownerPID,
+            guard let pid = (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value,
+                  let owner = owners[pid],
                   let layer = window[kCGWindowLayer as String] as? Int,
                   let dictionary = window[kCGWindowBounds as String] as? NSDictionary,
                   let bounds = CGRect(dictionaryRepresentation: dictionary) else { return nil }
-            return DockWindow(layer: layer, bounds: bounds)
+            return SystemWindow(layer: layer, bounds: bounds, owner: owner)
         }
     }
 }
