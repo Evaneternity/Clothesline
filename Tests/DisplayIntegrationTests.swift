@@ -189,6 +189,37 @@ func testDisplayExpiration() throws {
     clipboardLine.refreshExpiration(now: firstCapture.addingTimeInterval(121))
     precondition(clipboardLine.items.isEmpty, "ordinary duplicates do not extend retention")
     precondition(clipboardLine.recent.allSatisfy { !ownedURLs.contains($0.url) }, "clipboard history stays session-only")
+    let capacityLine = Line()
+    defer { capacityLine.clearClipboardStorage() }
+    capacityLine.maxItems = 1
+    capacityLine.setExpirationPolicy(ItemExpirationPolicy(lifetime: 60))
+    let captureTime = Date()
+    try capacityLine.attachClipboard(.text("older note"), now: captureTime)
+    try capacityLine.attachClipboard(.text("newer note"), now: captureTime.addingTimeInterval(30))
+    try capacityLine.attachClipboard(.text("older note"), now: captureTime.addingTimeInterval(61))
+    precondition(capacityLine.items.first?.noteText == "older note",
+                 "recaptured expired content takes the newest slot at capacity")
+
+    let menuSource = capacityLine.items[0].id
+    let menuView = GrabView()
+    var heldDuringMenu = false
+    menuView.onPressChange = {
+        capacityLine.pressedID = $0 ? menuSource : nil
+        if !$0 { capacityLine.refreshExpiration(now: captureTime.addingTimeInterval(122)) }
+    }
+    menuView.menuProvider = {
+        heldDuringMenu = capacityLine.pressedID == menuSource
+        capacityLine.refreshExpiration(now: captureTime.addingTimeInterval(122))
+        precondition(capacityLine.items.contains { $0.id == menuSource },
+                     "context menu keeps its source while expiration refreshes")
+        return NSMenu()
+    }
+    let menuEvent = NSEvent.mouseEvent(with: .rightMouseDown, location: .zero, modifierFlags: [],
+                                      timestamp: 0, windowNumber: 0, context: nil,
+                                      eventNumber: 0, clickCount: 1, pressure: 0)!
+    menuView.rightMouseDown(with: menuEvent)
+    precondition(heldDuringMenu && capacityLine.pressedID == nil && capacityLine.items.isEmpty,
+                 "context menu releases its source and applies pending expiration when closed")
     print("PASS: clipboard image/note hover, item count, retention, no pasteboard changes, drag/editor hold, restore/unlimited and recapture")
     print("PASS: live multi-folder expiration, source safety, drag deferral, restore/unlimited, pins/manual/restart and settings window construction")
 }

@@ -207,7 +207,9 @@ final class Line: ObservableObject {
         if let index = clipboardEntries.firstIndex(where: { $0.content.identity == content.identity }) {
             let existing = clipboardEntries[index]
             if manual || !expiration.includes(since: existing.capturedAt, now: now) {
-                clipboardEntries[index].capturedAt = now
+                var recaptured = clipboardEntries.remove(at: index)
+                recaptured.capturedAt = now
+                clipboardEntries.insert(recaptured, at: 0)
                 if manual, let file = try DownloadIndex.read(existing.url) {
                     dismissed.remove(file.fingerprint)
                     UserDefaults.standard.set(Array(dismissed), forKey: Self.dismissalKey)
