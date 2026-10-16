@@ -38,7 +38,7 @@ The detailed features and usage instructions below primarily describe macOS; see
 - **Detect completed downloads**: Filter hidden files, symbolic links, and temporary items such as `.crdownload`, `.download`, `.part`, and `.tmp`. Display files after two stable scans, at least two seconds without changes, and no companion temporary download.
 - **Hang files and folders**: Drag one or multiple items from Finder or select them from the menu. Store persistent references while originals stay in place.
 - **Preview and open**: Show document, image, and video thumbnails, with system icons for other types. Click for Quick Look, double-click to open in the default app, and open folders in Finder.
-- **Drag files out**: Provide real files to other apps or Finder with copy-only effects. Originals stay in place. Right-click to copy or reveal in Finder.
+- **Drag files out**: Provide real files to other apps or Finder with copy-only effects. Originals stay in place. Right-click to copy or reveal in Finder. The macOS source build also offers Copy File Name (including its extension) and Copy Full Path as plain text for both files and folders.
 - **Pin frequent items**: Pin individual files or folders so new arrivals cannot displace them. Pins survive restarts; overflow can be scrolled. Taking an item down unpins it; clearing unpins all.
 - **Identify files clearly**: Hover for about 0.4 seconds to see the full name, source folder, size, and creation/modification dates. Folder contents are not counted recursively. Unavailable cards retain last-known metadata and recover when accessible again.
 - **Rename quickly**: Rename the original file while keeping its extension. Reject collisions and stale metadata without overwriting another file.
