@@ -19,6 +19,7 @@ struct MacIntegrationTests {
         try testAppServices()
         try testDisplayExpiration()
         testMissionControlAvoidance()
+        try testHiddenDuringMissionControlReturn()
         try testMissionControlReplay()
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Clothesline-acceptance-\(UUID())")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

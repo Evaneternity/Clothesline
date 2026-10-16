@@ -79,7 +79,9 @@ struct LineRevealController {
         let delay = avoidingMissionControl && externalDrag ? 0 : delay
         if interactionHeld {
             enteredTopAt = nil
-            lastInside = now
+            // Holding an animation or interaction preserves visibility; it
+            // must not schedule a reveal after the user explicitly hides it.
+            lastInside = isRevealed ? now : nil
             return isRevealed
         }
         guard hasItems || externalDrag else {

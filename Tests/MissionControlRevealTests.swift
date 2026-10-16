@@ -48,5 +48,12 @@ func testMissionControlHiddenReveal() throws {
     try check(reveal.reveal(atTop: false, overLine: false, isRevealed: false, hasItems: false,
                            alwaysVisible: false, externalDrag: true, avoidingMissionControl: true, delay: 1.3, now: 1),
               "a real file drag immediately reveals an empty overview drop target")
+    reveal.reset()
+    try check(!reveal.reveal(atTop: false, overLine: false, isRevealed: false, hasItems: true,
+                            alwaysVisible: false, interactionHeld: true, delay: 0, now: 10),
+              "an animation hold preserves an explicit hidden state")
+    try check(!reveal.reveal(atTop: false, overLine: false, isRevealed: false, hasItems: true,
+                            alwaysVisible: false, delay: 0, now: 10.1),
+              "ending a hidden hold cannot start a fresh reveal grace period")
     print("PASS: hidden overview rope stays hidden on blank click and exit; new drag and normal hover still work")
 }

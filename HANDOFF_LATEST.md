@@ -1,4 +1,13 @@
-# 最新交接：总览内隐藏后退出误展开
+# 最新交接：复位动画中主动隐藏回归修复
+
+2026-10-16。用户要求修复 review 的 P2：复位动画仍运行时主动隐藏，保持分支会重新写入显示宽限时间，动画结束后导致误展开。
+
+- LineRevealController 的保持分支改为 lastInside = isRevealed ? now : nil，只延续可见状态。
+- Tests/MissionControlReturnTests.swift 将实际 LinePanel 与状态机组合，在动画中隐藏并轮询超过动画和宽限时间；同一回归先失败后通过。核心状态测试同步覆盖隐藏保持释放。
+- 完整核心/macOS 测试、Universal Release 构建及严格双架构签名通过，已重启 build/Clothesline.app，SHA-256：37aa6fb2fee48f65f00981c163aa6b8d90002f4fc8b4ad5c009cb3de5eeac78c。未声称本轮人工 Mission Control UI 验收。
+- 独立 PR 在 ../Clothesline-pr-mission-control 工作树、fix/mission-control-occlusion 分支准备，直接基于上游 main，不包含已有设置/复制 PR 的功能。用户要求 PR 明确“仅 macOS 27 验证，其他版本未测试，仅供参考，请谨慎合并”。
+
+## 前轮：总览内隐藏后退出误展开
 
 2026-10-16。用户报告隐藏后点击 Mission Control 空白处退出，会再显示再隐藏。只读本地采样确认重新显示发生在退出前的普通按下事件，且用户补充退出方式为点击空白处。
 
