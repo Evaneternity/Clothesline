@@ -1,4 +1,15 @@
-# 最新交接：macOS 27 Mission Control 漏检测修复
+# 最新交接：Mission Control 退出复位动画
+
+2026-10-16。用户已确认检测修复后的真实 Finder 拖入及退出复位，随后要求放慢回到顶部的动作。当前仍在 feature/mission-control-avoidance。
+
+## 本轮改动与验证
+- LinePanel 将可见晾衣绳的退出复位改为 0.6 秒缓入缓出，使用公共主循环定时器更新实际窗口位置；动画结束后恢复 floating 层级，系统“减少动态效果”开启时直接复位。
+- 相同目标的轮询不重启动画。按住、拖入或拖出时暂停，结束后续播；总览重新出现或屏幕/布局变化时取消旧动画。AppDelegate 在复位期间保持展示、暂停身份提示。
+- 实际 AppKit 窗口测试覆盖中间位置、重复轮询、交互暂停/恢复、总览重开取消旧动画；scripts/test-macos.sh、scripts/build-app.sh release（含核心测试）、严格全架构签名均通过。
+- 已退出上一试用进程并启动 build/Clothesline.app。二进制 SHA-256：d717d6a4f2e366e73a00a759d0e22fd3fc3511e0809ec9b31ec65f68527b187e。
+- 当前动画观感待用户试用；本轮未再次进行真实 Mission Control 拖放人工验收。未替换 /Applications 安装包，未修改 PR #2/#3 或发布 Release。
+
+## 前轮：macOS 27 Mission Control 漏检测修复
 
 2026-10-16。用户反馈试用版完全未下移；先用 diagnosing-bugs 的人机复现循环采集实际窗口元数据，再修复。继续在 feature/mission-control-avoidance 工作，未改现有 PR。
 

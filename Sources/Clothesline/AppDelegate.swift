@@ -28,6 +28,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         panel = LinePanel(content: FileDropView(line: line))
+        panel.shouldHoldPosition = { [weak line] in
+            guard let line else { return false }
+            return line.pressedID != nil || line.draggingID != nil || line.interactionHeld
+                || NSEvent.pressedMouseButtons & 1 != 0
+        }
         line.showRecent = { [weak self] in
             guard let self else { return }; self.recentDrawer.show(line: self.line)
         }
@@ -148,7 +153,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Once lowered, don't move the drop target upward under an ongoing
         // Finder drag, even if moving away from the edge closes Mission Control.
         avoidanceClearance = externalDragging ? max(avoidanceClearance, clearance) : clearance
-        if panel.placeOnScreen(screen, avoidingTop: avoidanceClearance) {
+        if panel.placeOnScreen(screen, avoidingTop: avoidanceClearance,
+                               animateReturn: line.revealed && !externalDragging) {
             identityPanel.hide()
             recalculateCapacity()
             if line.revealed {
@@ -171,7 +177,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let hovered = line.items.first { item in
             line.hitRects[item.id]?.contains(local) == true
         }
-        if line.revealed, !externalDragging, let item = hovered, let rect = line.hitRects[item.id] {
+        if line.revealed, !externalDragging, !panel.isReturning,
+           let item = hovered, let rect = line.hitRects[item.id] {
             let anchor = NSRect(x: panel.frame.minX + rect.minX,
                                 y: panel.frame.maxY - rect.maxY,
                                 width: rect.width, height: rect.height)
@@ -182,6 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let shouldReveal = revealController.reveal(
             atTop: atTop, overLine: overPanel || overCard, isRevealed: line.revealed,
             hasItems: !line.items.isEmpty, alwaysVisible: pinned,
+            interactionHeld: panel.isReturning,
             externalDrag: externalDragging,
             delay: avoidingMissionControl && externalDragging ? 0 : preferences.hoverDelay, now: now)
         if shouldReveal != line.revealed { line.revealed = shouldReveal }

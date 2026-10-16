@@ -103,6 +103,45 @@ func testMissionControlAvoidance() {
         panel.placeOnScreen(screen)
         precondition(panel.level == .floating && panel.frame == normalFrame,
                      "overview exit restores both position and ordinary window level")
+        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            panel.placeOnScreen(screen, avoidingTop: 250)
+            let start = panel.frame
+            panel.placeOnScreen(screen, animateReturn: true)
+            precondition(panel.frame == start && panel.isReturning,
+                         "overview exit starts from the lowered frame without jumping")
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.2))
+            precondition(panel.frame.minY > start.minY && panel.frame.minY < normalFrame.minY,
+                         "the actual AppKit window passes through intermediate positions")
+            for _ in 0..<10 {
+                panel.placeOnScreen(screen, animateReturn: true)
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+            }
+            precondition(!panel.isReturning && panel.frame == normalFrame && panel.level == .floating,
+                         "regular pointer polling cannot restart or interrupt the return")
+
+            panel.placeOnScreen(screen, avoidingTop: 250)
+            panel.placeOnScreen(screen, animateReturn: true)
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15))
+            var held = true
+            panel.shouldHoldPosition = { held }
+            let heldFrame = panel.frame
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.2))
+            precondition(panel.frame == heldFrame && panel.isReturning,
+                         "a new click or drag holds the window at its current position")
+            held = false
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.65))
+            precondition(panel.frame == normalFrame && !panel.isReturning,
+                         "the return resumes after interaction ends")
+
+            panel.placeOnScreen(screen, avoidingTop: 250)
+            panel.placeOnScreen(screen, animateReturn: true)
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15))
+            panel.placeOnScreen(screen, avoidingTop: 250)
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.65))
+            precondition(!panel.isReturning && panel.frame == start && panel.level == .statusBar,
+                         "reopening overview cancels the old return without a later jump")
+            print("PASS: live panel return animation, repeated polling, interaction hold/resume and overview re-entry")
+        }
         panel.close()
     }
     print("Mission Control detection, polling and panel placement tests passed")
